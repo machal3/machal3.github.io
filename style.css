@@ -92,3 +92,7 @@ body {
 .page-header {
     margin-bottom: 20px;
 }
+
+.navbar-link:hover {
+    color: #81d4fa;
+}
