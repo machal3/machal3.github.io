@@ -1,0 +1,94 @@
+@import url('https://fonts.googleapis.com/css2?family=Lato&display=swap');
+
+body {
+    font-family: 'Lato', sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+.navbar {
+    background-color: #2c3e50;
+    position: fixed;
+    top: 0;
+    width: 100%;
+    z-index: 1000;
+}
+
+.navbar-logo {
+    color: #fff;
+    position: absolute;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 16px;
+}
+
+.logo-image {
+    vertical-align: middle;
+    margin-right: 10px;
+    height: 30px;
+}
+
+.navbar-title {
+    vertical-align: middle;
+}
+
+.navbar-menu {
+    margin: 0;
+    padding: 20px;
+    list-style: none;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+.navbar-link {
+    color: #fff;
+    text-decoration: none;
+    margin-right: 20px;
+}
+
+.dropdown {
+    position: relative;
+}
+
+.dropdown-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background-color: #2c3e50;
+    display: none;
+    list-style: none;
+    padding: 10px;
+    margin: 0;
+}
+
+.dropdown-link {
+    color: #fff;
+    text-decoration: none;
+    margin-bottom: 10px;
+}
+
+.dropdown-menu li {
+    margin-bottom: 5px;
+}
+
+.dropdown-menu li:last-child {
+    margin-bottom: 0;
+}
+
+/* Dodanie marginesów do głównej zawartości */
+.main {
+    margin: 100px;
+}
+
+.main h1 {
+    font-size: 24px;
+    margin-bottom: 20px;
+    color: #2c3e50;
+}
+
+/* Dodano odstęp pod page-header */
+.page-header {
+    margin-bottom: 20px;
+}
