@@ -2,11 +2,11 @@
 
 <head>
     <title>Strona Samorządu</title>
+    <meta charset="utf-8">
     <link rel="stylesheet" href="style.css">
     <link rel="shortcut icon" href="logostaszic.png">
     <link rel="stylesheet" href="style.css">
-
-</html>
+</head>
 
 <body>
     <nav class="navbar">
@@ -14,12 +14,15 @@
             <img src="logostaszic.png" alt="Logo" class="logo-image">
             <span class="navbar-title">Strona Samorządu XIV Liceum Ogólnokształcącego im. Stanisława Staszica</span>
         </div>
+        <!-- Dodany przycisk menu dla mobilnych urządzeń -->
+        <button class="menu-toggle"
+            onclick="document.querySelector('.navbar-menu').classList.toggle('active')">☰</button>
         <ul class="navbar-menu">
             <li><a href="index.html" class="navbar-link">Strona Główna</a></li>
             <li><a href="senat.html" class="navbar-link">Prezydium Senatu</a></li>
             <li><a href="rzad.html" class="navbar-link">Rząd</a></li>
             <li><a href="trybunalregulaminowy.html" class="navbar-link">Trybunał Regulaminowy</a></li>
-            <li><a href="regulamin.html" class="navbar-link">Regulamin</a></li>
+            <li><a href="Regulamin.html" class="navbar-link">Regulamin</a></li>
             <li class="dropdown" onmouseover="this.querySelector('ul').style.display='block'"
                 onmouseout="this.querySelector('ul').style.display='none'">
                 <a href="#" class="navbar-link">Sprawozdania</a>
@@ -33,20 +36,38 @@
     </nav>
     <section class="main">
         <header class="page-header" style="text-align: center; padding: 20px 0; background-color: #f4f4f4;">
-            <h1 style="margin: 0; font-size: 2.5em;">Samorząd Uczniowski
-            </h1>
+            <h1 style="margin: 0; font-size: 2.5em;">Samorząd Uczniowski</h1>
         </header>
+        <div class="social-buttons"
+            style="display: flex; justify-content: center; align-items: center; gap: 10px; margin: 20px 0;">
+            <a href="https://www.facebook.com/samorzad.staszic" class="btn"
+                style="padding: 10px 20px; background-color: #3b5998; color: white; text-decoration: none; border-radius: 5px;">Facebook</a>
+            <a href="https://discord.gg/B74aeKbGdp" class="btn"
+                style="padding: 10px 20px; background-color: #7289da; color: white; text-decoration: none; border-radius: 5px;">Discord</a>
+            <a href="https://www.instagram.com/staszic.samorzad/" class="btn"
+                style="padding: 10px 20px; background-color: #E4405F; color: white; text-decoration: none; border-radius: 5px;">Instagram</a>
+            <a href="https://staszic.waw.pl/" class="btn"
+                style="padding: 10px 20px; background-color: #555555; color: white; text-decoration: none; border-radius: 5px;">Strona
+                Staszica</a>
+        </div>
         <article>
 
             Witamy na podstronie Samorządu Uczniowskiego XIV Liceum Ogólnokształcącego im. Stanisława Staszica w
             Warszawie.
             <br><br>
-            Aby zapoznać się z bieżącą działalnością Samorządu zachęcamy do odwiedzenia naszej strony na Facebooku:
-            <a href="https://www.facebook.com/samorzad.staszic/"> https://www.facebook.com/samorzad.staszic/ </a>
-
-
+            Podstawowymi celami Samorządu są:
+            <ul>
+                <li> ochrona i reprezentacja interesów uczniów; </li>
+                <li> organizacja życia szkolnego, w szczególności w sferze kulturalnej i rozrywkowej; </li>
+                <li> ochrona i promocja wartości obywatelskich, społecznych - w tym tolerancji - które łączą uczniów;
+                </li>
+                <li> wnioskowanie i wydawanie opinii w sprawach związanych z funkcjonowaniem Szkoły. </li>
+            </ul>
         </article>
-
+    </section>
+    <footer class="footer">
+        © 2025 Samorząd XIV Liceum Ogólnokształcącego im. Stanisława Staszica | samorzad@staszic.waw.pl
+    </footer>
 </body>
 
 </html>

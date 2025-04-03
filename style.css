@@ -4,6 +4,12 @@ body {
     font-family: 'Lato', sans-serif;
     margin: 0;
     padding: 0;
+    transition: opacity 0.5s ease-in-out;
+}
+
+html {
+    overflow-y: scroll;
+    overflow-x: hidden;
 }
 
 .navbar {
@@ -12,14 +18,16 @@ body {
     top: 0;
     width: 100%;
     z-index: 1000;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
 }
 
 .navbar-logo {
     color: #fff;
-    position: absolute;
-    left: 20px;
-    top: 50%;
-    transform: translateY(-50%);
+    position: relative;
+    margin-left: 20px;
     font-size: 16px;
 }
 
@@ -77,7 +85,6 @@ body {
     margin-bottom: 0;
 }
 
-/* Dodanie marginesów do głównej zawartości */
 .main {
     margin: 100px;
 }
@@ -95,4 +102,79 @@ body {
 
 .navbar-link:hover {
     color: #81d4fa;
+}
+
+.footer {
+    background-color: #2c3e50;
+    color: #fff;
+    text-align: center;
+    width: 100%;
+    padding: 15px 0;
+}
+
+/* Ukryj przycisk rozwijanego menu domyślnie */
+.menu-toggle {
+    display: none;
+}
+
+@media (max-width: 600px) {
+    .navbar {
+        flex-direction: column;
+        align-items: center;
+        padding: 10px;
+        position: static;
+    }
+
+    /* Ukryj menu domyślnie, wyświetl przy rozwinięciu */
+    .navbar-menu {
+        display: none;
+        flex-direction: column;
+        width: 100%;
+        text-align: center;
+        margin: 0;
+        padding: 0;
+    }
+
+    /* Wyświetl menu po aktywacji */
+    .navbar-menu.active {
+        display: flex;
+    }
+
+    .navbar-menu li {
+        margin: 10px 0;
+    }
+
+    .navbar-link {
+        display: block;
+        padding: 10px 0;
+        margin: 0;
+    }
+
+    .dropdown-menu {
+        position: static;
+        display: block;
+        padding: 0;
+        margin: 0;
+    }
+
+    .dropdown-menu li {
+        margin: 5px 0;
+    }
+
+    /* Dodane style dla przycisku rozwijanego menu */
+    .menu-toggle {
+        display: block;
+        background: none;
+        border: none;
+        color: #fff;
+        font-size: 24px;
+        cursor: pointer;
+        margin-left: auto;
+        padding: 10px;
+    }
+
+    /* Dodajemy regułę ukrywającą napis */
+    .navbar-title {
+        display: none;
+    }
 }
