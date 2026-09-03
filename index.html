@@ -1,9 +1,8 @@
-Oto zaktualizowany kod z uproszczonym nagłówkiem oraz dopracowanymi proporcjami i światłem typograficznym w stylu czystego, szlachetnego edytorialu:
 <!DOCTYPE html>
 <html lang="pl">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Odliczanie</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -15,57 +14,71 @@ Oto zaktualizowany kod z uproszczonym nagłówkiem oraz dopracowanymi proporcjam
       padding: 0;
     }
 
+    :root {
+      --bg: #f7f6f2;
+      --text-main: #141414;
+      --text-muted: #787570;
+      --border-line: #dfdcd5;
+    }
+
     body {
       min-height: 100vh;
+      min-height: 100dvh;
       display: flex;
       align-items: center;
       justify-content: center;
-      background-color: #f7f6f2;
-      color: #1a1a1a;
-      padding: 2.5rem 1.5rem;
+      background-color: var(--bg);
+      color: var(--text-main);
+      padding: clamp(1.5rem, 5vw, 4rem) clamp(1.25rem, 6vw, 3rem);
+      padding-top: max(clamp(1.5rem, 5vw, 4rem), env(safe-area-inset-top));
+      padding-bottom: max(clamp(1.5rem, 5vw, 4rem), env(safe-area-inset-bottom));
+      padding-left: max(clamp(1.25rem, 6vw, 3rem), env(safe-area-inset-left));
+      padding-right: max(clamp(1.25rem, 6vw, 3rem), env(safe-area-inset-right));
       font-family: "Newsreader", Garamond, Georgia, serif;
       -webkit-font-smoothing: antialiased;
     }
 
     main {
       width: 100%;
-      max-width: 640px;
-      padding: 1rem 0;
+      max-width: 680px;
+      display: flex;
+      flex-direction: column;
     }
 
     header {
-      margin-bottom: 3.5rem;
+      margin-bottom: clamp(2rem, 5vw, 3.5rem);
     }
 
     .meta {
       font-family: "Space Grotesk", sans-serif;
-      font-size: 0.72rem;
+      font-size: clamp(0.68rem, 1.8vw, 0.75rem);
       letter-spacing: 0.16em;
       text-transform: uppercase;
-      color: #787570;
-      margin-bottom: 1.25rem;
+      color: var(--text-muted);
+      margin-bottom: clamp(0.75rem, 2vw, 1.25rem);
     }
 
     h1 {
-      font-size: 2.75rem;
+      font-size: clamp(2.4rem, 7vw, 3.25rem);
       font-weight: 300;
-      line-height: 1.1;
-      letter-spacing: -0.02em;
-      color: #141414;
+      line-height: 1.05;
+      letter-spacing: -0.025em;
+      color: var(--text-main);
     }
 
     .rule {
       width: 100%;
       height: 1px;
-      background: #dfdcd5;
-      margin-bottom: 3.5rem;
+      background: var(--border-line);
+      margin-bottom: clamp(2rem, 5vw, 3.5rem);
     }
 
+    /* Układ 4 kolumn z płynnym przejściem na telefonach */
     .grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
-      column-gap: 2rem;
-      row-gap: 2rem;
+      column-gap: clamp(1rem, 3.5vw, 2.5rem);
+      row-gap: clamp(1.75rem, 4vw, 2.5rem);
     }
 
     .unit {
@@ -76,56 +89,39 @@ Oto zaktualizowany kod z uproszczonym nagłówkiem oraz dopracowanymi proporcjam
 
     .num {
       font-family: "Newsreader", serif;
-      font-size: 4.25rem;
+      font-size: clamp(2.8rem, 8.5vw, 4.5rem);
       font-weight: 300;
       line-height: 0.9;
-      letter-spacing: -0.03em;
+      letter-spacing: -0.035em;
       font-variant-numeric: tabular-nums;
-      color: #141414;
+      color: var(--text-main);
     }
 
     .label {
       font-family: "Space Grotesk", sans-serif;
-      font-size: 0.68rem;
+      font-size: clamp(0.62rem, 1.6vw, 0.7rem);
       letter-spacing: 0.14em;
       text-transform: uppercase;
-      color: #787570;
-      margin-top: 1rem;
+      color: var(--text-muted);
+      margin-top: clamp(0.6rem, 1.5vw, 1rem);
     }
 
     .finished {
       display: none;
-      font-size: 1.5rem;
+      font-size: clamp(1.4rem, 4vw, 1.75rem);
       font-style: italic;
-      color: #141414;
+      color: var(--text-main);
     }
 
-    @media (max-width: 600px) {
-      body {
-        align-items: flex-start;
-        padding: 4rem 1.5rem 2.5rem;
-      }
-
-      header {
-        margin-bottom: 2.5rem;
-      }
-
-      h1 {
-        font-size: 2.2rem;
-      }
-
-      .rule {
-        margin-bottom: 2.5rem;
-      }
-
+    /* Dopasowanie do ekranów smartfonów poniżej 560px */
+    @media (max-width: 560px) {
       .grid {
         grid-template-columns: repeat(2, 1fr);
-        column-gap: 1.5rem;
-        row-gap: 2.25rem;
       }
-
-      .num {
-        font-size: 3.25rem;
+      
+      .unit {
+        border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+        padding-bottom: 0.75rem;
       }
     }
   </style>
@@ -202,4 +198,3 @@ Oto zaktualizowany kod z uproszczonym nagłówkiem oraz dopracowanymi proporcjam
   </script>
 </body>
 </html>
-
