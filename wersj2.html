@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Odliczanie czasu</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=EB+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #1a1612;
+      background-image: radial-gradient(circle at center, #2e261f 0%, #15120f 100%);
+      font-family: "EB Garamond", Garamond, Georgia, serif;
+      color: #2b2118;
+      padding: 2rem 1rem;
+    }
+
+    .book-page {
+      background: #fdfbf7;
+      background-image: 
+        radial-gradient(#eedfcc 1px, transparent 0),
+        linear-gradient(to right, rgba(0,0,0,0.04) 0%, transparent 8%, transparent 92%, rgba(0,0,0,0.04) 100%);
+      background-size: 24px 24px, 100% 100%;
+      border-radius: 4px;
+      padding: 3.5rem 3rem;
+      max-width: 620px;
+      width: 100%;
+      box-shadow: 
+        0 20px 40px rgba(0, 0, 0, 0.6),
+        0 2px 6px rgba(0, 0, 0, 0.4),
+        inset 0 0 80px rgba(180, 150, 110, 0.25);
+      position: relative;
+    }
+
+    .inner-border {
+      border: 2px solid #5a4634;
+      padding: 2.5rem 2rem;
+      outline: 1px solid #5a4634;
+      outline-offset: 5px;
+      text-align: center;
+      position: relative;
+    }
+
+    .ornament-top, .ornament-bottom {
+      font-size: 1.25rem;
+      color: #8c6d48;
+      letter-spacing: 0.2em;
+      user-select: none;
+    }
+
+    .chapter-label {
+      font-family: "Cinzel", serif;
+      font-size: 0.85rem;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: #7d6349;
+      margin-top: 1.2rem;
+      margin-bottom: 0.4rem;
+    }
+
+    h1 {
+      font-family: "Cinzel", serif;
+      font-size: 2.1rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: #261d15;
+      margin-bottom: 0.5rem;
+    }
+
+    .subtitle {
+      font-style: italic;
+      font-size: 1.15rem;
+      color: #614f3f;
+      margin-bottom: 2rem;
+    }
+
+    .divider {
+      width: 60px;
+      height: 1px;
+      background: #8c6d48;
+      margin: 0 auto 2.5rem;
+      position: relative;
+    }
+
+    .divider::after {
+      content: "♦";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: #fdfbf7;
+      padding: 0 6px;
+      font-size: 0.65rem;
+      color: #8c6d48;
+    }
+
+    .countdown-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1.25rem;
+      margin-bottom: 2rem;
+    }
+
+    .time-unit {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .number {
+      font-family: "Cinzel", serif;
+      font-size: 2.6rem;
+      font-weight: 500;
+      line-height: 1;
+      color: #261d15;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .label {
+      font-style: italic;
+      font-size: 0.95rem;
+      color: #7d6349;
+      margin-top: 0.5rem;
+    }
+
+    .finished {
+      display: none;
+      font-family: "Cinzel", serif;
+      font-size: 1.5rem;
+      letter-spacing: 0.15em;
+      color: #4a2810;
+      margin: 1.5rem 0;
+    }
+
+    @media (max-width: 540px) {
+      .book-page {
+        padding: 2rem 1.25rem;
+      }
+      .inner-border {
+        padding: 1.75rem 1rem;
+      }
+      .countdown-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.5rem 1rem;
+      }
+      .number {
+        font-size: 2.1rem;
+      }
+      h1 {
+        font-size: 1.6rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="book-page">
+    <div class="inner-border">
+      <div class="ornament-top">❦ &nbsp; ❖ &nbsp; ❦</div>
+      <div class="chapter-label">Rozdział Nowy</div>
+      <h1>Czas Oczekiwania</h1>
+      <div class="subtitle">Do czternastego dnia września Roku Pańskiego 2026, godziny 18:00</div>
+      
+      <div class="divider"></div>
+
+      <div class="countdown-grid" id="timer">
+        <div class="time-unit">
+          <span class="number" id="days">00</span>
+          <span class="label">Dni</span>
+        </div>
+        <div class="time-unit">
+          <span class="number" id="hours">00</span>
+          <span class="label">Godzin</span>
+        </div>
+        <div class="time-unit">
+          <span class="number" id="minutes">00</span>
+          <span class="label">Minut</span>
+        </div>
+        <div class="time-unit">
+          <span class="number" id="seconds">00</span>
+          <span class="label">Sekund</span>
+        </div>
+      </div>
+
+      <div class="finished" id="finished-message">— Finis —</div>
+
+      <div class="ornament-bottom">❧ &nbsp; ❖ &nbsp; ❧</div>
+    </div>
+  </main>
+
+  <script>
+    const targetDate = new Date("2026-09-14T18:00:00+02:00").getTime();
+
+    const daysEl = document.getElementById("days");
+    const hoursEl = document.getElementById("hours");
+    const minutesEl = document.getElementById("minutes");
+    const secondsEl = document.getElementById("seconds");
+    const timerGrid = document.getElementById("timer");
+    const finishedMsg = document.getElementById("finished-message");
+
+    function pad(num) {
+      return String(num).padStart(2, "0");
+    }
+
+    function updateCountdown() {
+      const now = new Date().getTime();
+      const difference = targetDate - now;
+
+      if (difference <= 0) {
+        clearInterval(interval);
+        timerGrid.style.display = "none";
+        finishedMsg.style.display = "block";
+        return;
+      }
+
+      const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((difference % (1000 * 60)) / 1000);
+
+      daysEl.textContent = pad(days);
+      hoursEl.textContent = pad(hours);
+      minutesEl.textContent = pad(minutes);
+      secondsEl.textContent = pad(seconds);
+    }
+
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 1000);
+  </script>
+</body>
+</html>
