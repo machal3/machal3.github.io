@@ -3,13 +3,15 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Odliczanie</title>
+  <title>Odliczanie czasu</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=EB+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
   <style>
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     }
 
     body {
@@ -17,118 +19,186 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #311042 100%);
-      color: #f8fafc;
-      padding: 1.5rem;
+      background-color: #1a1612;
+      background-image: radial-gradient(circle at center, #2e261f 0%, #15120f 100%);
+      font-family: "EB Garamond", Garamond, Georgia, serif;
+      color: #2b2118;
+      padding: 2rem 1rem;
     }
 
-    .card {
-      background: rgba(255, 255, 255, 0.05);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      border-radius: 24px;
-      padding: 3rem 2.5rem;
-      text-align: center;
-      max-width: 640px;
+    .book-page {
+      background: #fdfbf7;
+      background-image: 
+        radial-gradient(#eedfcc 1px, transparent 0),
+        linear-gradient(to right, rgba(0,0,0,0.04) 0%, transparent 8%, transparent 92%, rgba(0,0,0,0.04) 100%);
+      background-size: 24px 24px, 100% 100%;
+      border-radius: 4px;
+      padding: 3.5rem 3rem;
+      max-width: 620px;
       width: 100%;
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      box-shadow: 
+        0 20px 40px rgba(0, 0, 0, 0.6),
+        0 2px 6px rgba(0, 0, 0, 0.4),
+        inset 0 0 80px rgba(180, 150, 110, 0.25);
+      position: relative;
+    }
+
+    .inner-border {
+      border: 2px solid #5a4634;
+      padding: 2.5rem 2rem;
+      outline: 1px solid #5a4634;
+      outline-offset: 5px;
+      text-align: center;
+      position: relative;
+    }
+
+    .ornament-top, .ornament-bottom {
+      font-size: 1.25rem;
+      color: #8c6d48;
+      letter-spacing: 0.2em;
+      user-select: none;
+    }
+
+    .chapter-label {
+      font-family: "Cinzel", serif;
+      font-size: 0.85rem;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: #7d6349;
+      margin-top: 1.2rem;
+      margin-bottom: 0.4rem;
     }
 
     h1 {
-      font-size: 2rem;
+      font-family: "Cinzel", serif;
+      font-size: 2.1rem;
       font-weight: 700;
-      letter-spacing: -0.02em;
+      letter-spacing: 0.08em;
+      color: #261d15;
       margin-bottom: 0.5rem;
     }
 
-    .target-date {
-      color: #94a3b8;
-      font-size: 0.95rem;
-      margin-bottom: 2.5rem;
+    .subtitle {
+      font-style: italic;
+      font-size: 1.15rem;
+      color: #614f3f;
+      margin-bottom: 2rem;
+    }
+
+    .divider {
+      width: 60px;
+      height: 1px;
+      background: #8c6d48;
+      margin: 0 auto 2.5rem;
+      position: relative;
+    }
+
+    .divider::after {
+      content: "♦";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: #fdfbf7;
+      padding: 0 6px;
+      font-size: 0.65rem;
+      color: #8c6d48;
     }
 
     .countdown-grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
-      gap: 1rem;
+      gap: 1.25rem;
+      margin-bottom: 2rem;
     }
 
-    .time-box {
-      background: rgba(255, 255, 255, 0.04);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 16px;
-      padding: 1.25rem 0.5rem;
+    .time-unit {
       display: flex;
       flex-direction: column;
       align-items: center;
     }
 
     .number {
-      font-size: 2.5rem;
-      font-weight: 800;
+      font-family: "Cinzel", serif;
+      font-size: 2.6rem;
+      font-weight: 500;
       line-height: 1;
-      color: #38bdf8;
+      color: #261d15;
       font-variant-numeric: tabular-nums;
     }
 
     .label {
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      color: #94a3b8;
+      font-style: italic;
+      font-size: 0.95rem;
+      color: #7d6349;
       margin-top: 0.5rem;
     }
 
     .finished {
-      font-size: 1.75rem;
-      font-weight: 700;
-      color: #4ade80;
       display: none;
+      font-family: "Cinzel", serif;
+      font-size: 1.5rem;
+      letter-spacing: 0.15em;
+      color: #4a2810;
+      margin: 1.5rem 0;
     }
 
-    @media (max-width: 520px) {
+    @media (max-width: 540px) {
+      .book-page {
+        padding: 2rem 1.25rem;
+      }
+      .inner-border {
+        padding: 1.75rem 1rem;
+      }
       .countdown-grid {
         grid-template-columns: repeat(2, 1fr);
+        gap: 1.5rem 1rem;
       }
       .number {
-        font-size: 2rem;
+        font-size: 2.1rem;
       }
-      .card {
-        padding: 2rem 1.5rem;
+      h1 {
+        font-size: 1.6rem;
       }
     }
   </style>
 </head>
 <body>
-  <div class="card">
-    <h1>Odliczanie</h1>
-    <div class="target-date">14 września 2026, 18:00 CEST</div>
+  <main class="book-page">
+    <div class="inner-border">
+      <div class="ornament-top">❦ &nbsp; ❖ &nbsp; ❦</div>
+      <div class="chapter-label">Rozdział Nowy</div>
+      <h1>Czas Oczekiwania</h1>
+      <div class="subtitle">Do czternastego dnia września Roku Pańskiego 2026, godziny 18:00</div>
+      
+      <div class="divider"></div>
 
-    <div class="countdown-grid" id="timer">
-      <div class="time-box">
-        <span class="number" id="days">00</span>
-        <span class="label">Dni</span>
+      <div class="countdown-grid" id="timer">
+        <div class="time-unit">
+          <span class="number" id="days">00</span>
+          <span class="label">Dni</span>
+        </div>
+        <div class="time-unit">
+          <span class="number" id="hours">00</span>
+          <span class="label">Godzin</span>
+        </div>
+        <div class="time-unit">
+          <span class="number" id="minutes">00</span>
+          <span class="label">Minut</span>
+        </div>
+        <div class="time-unit">
+          <span class="number" id="seconds">00</span>
+          <span class="label">Sekund</span>
+        </div>
       </div>
-      <div class="time-box">
-        <span class="number" id="hours">00</span>
-        <span class="label">Godzin</span>
-      </div>
-      <div class="time-box">
-        <span class="number" id="minutes">00</span>
-        <span class="label">Minut</span>
-      </div>
-      <div class="time-box">
-        <span class="number" id="seconds">00</span>
-        <span class="label">Sekund</span>
-      </div>
+
+      <div class="finished" id="finished-message">— Finis —</div>
+
+      <div class="ornament-bottom">❧ &nbsp; ❖ &nbsp; ❧</div>
     </div>
-
-    <div class="finished" id="finished-message">Czas minął!</div>
-  </div>
+  </main>
 
   <script>
-    // Data docelowa: 14 września 2026, 18:00:00 (strefa polska/CEST: UTC+2)
     const targetDate = new Date("2026-09-14T18:00:00+02:00").getTime();
 
     const daysEl = document.getElementById("days");
