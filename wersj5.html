@@ -1,4 +1,3 @@
-Zastąpiłem standardowy pasek postępu elegancką, edytorialną osią czasu (liniowym diagramem podróży) ze skrajnymi znacznikami dat (21.08 i 14.09), ruchomym punktem postępu oraz subtelną skalą tickową poniżej:
 <!DOCTYPE html>
 <html lang="pl">
 <head>
@@ -20,7 +19,6 @@ Zastąpiłem standardowy pasek postępu elegancką, edytorialną osią czasu (li
       --text-main: #141414;
       --text-muted: #787570;
       --border-line: #dfdcd5;
-      --border-light: #ece9e2;
     }
 
     body {
@@ -48,7 +46,7 @@ Zastąpiłem standardowy pasek postępu elegancką, edytorialną osią czasu (li
     }
 
     header {
-      margin-bottom: clamp(2rem, 4vw, 3rem);
+      margin-bottom: clamp(2rem, 5vw, 3.5rem);
     }
 
     .meta {
@@ -75,12 +73,12 @@ Zastąpiłem standardowy pasek postępu elegancką, edytorialną osią czasu (li
       margin-bottom: clamp(2rem, 5vw, 3.5rem);
     }
 
+    /* Układ 4 kolumn z płynnym przejściem na telefonach */
     .grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
       column-gap: clamp(1rem, 3.5vw, 2.5rem);
       row-gap: clamp(1.75rem, 4vw, 2.5rem);
-      margin-bottom: clamp(3rem, 7vw, 4.5rem);
     }
 
     .unit {
@@ -108,102 +106,14 @@ Zastąpiłem standardowy pasek postępu elegancką, edytorialną osią czasu (li
       margin-top: clamp(0.6rem, 1.5vw, 1rem);
     }
 
-    /* Oś czasu i wskaźnik drogi */
-    .timeline-container {
-      position: relative;
-      width: 100%;
-      padding-top: 2rem;
-    }
-
-    .timeline-track {
-      position: relative;
-      width: 100%;
-      height: 1px;
-      background: var(--border-line);
-    }
-
-    .timeline-fill {
-      position: absolute;
-      top: 0;
-      left: 0;
-      height: 1px;
-      background: var(--text-main);
-      width: 0%;
-      transition: width 0.3s ease-out;
-    }
-
-    /* Ruchomy marker ze wskaźnikiem */
-    .timeline-marker {
-      position: absolute;
-      top: 50%;
-      left: 0%;
-      transform: translate(-50%, -50%);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      transition: left 0.3s ease-out;
-      pointer-events: none;
-    }
-
-    .marker-dot {
-      width: 7px;
-      height: 7px;
-      background: var(--bg);
-      border: 1.5px solid var(--text-main);
-      border-radius: 50%;
-    }
-
-    .marker-value {
-      position: absolute;
-      bottom: 12px;
-      font-family: "Space Grotesk", sans-serif;
-      font-size: 0.68rem;
-      letter-spacing: 0.08em;
-      color: var(--text-main);
-      white-space: nowrap;
-      font-variant-numeric: tabular-nums;
-    }
-
-    /* Podziałka i daty graniczne */
-    .timeline-ticks {
-      display: flex;
-      justify-content: space-between;
-      width: 100%;
-      margin-top: 6px;
-      user-select: none;
-    }
-
-    .tick {
-      width: 1px;
-      height: 4px;
-      background: var(--border-line);
-    }
-
-    .tick.major {
-      height: 7px;
-      background: var(--text-muted);
-    }
-
-    .timeline-labels {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-top: 0.75rem;
-      font-family: "Space Grotesk", sans-serif;
-      font-size: 0.68rem;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--text-muted);
-    }
-
     .finished {
       display: none;
       font-size: clamp(1.4rem, 4vw, 1.75rem);
       font-style: italic;
       color: var(--text-main);
-      margin-bottom: 2.5rem;
     }
 
+    /* Dopasowanie do ekranów smartfonów poniżej 560px */
     @media (max-width: 560px) {
       .grid {
         grid-template-columns: repeat(2, 1fr);
@@ -245,39 +155,10 @@ Zastąpiłem standardowy pasek postępu elegancką, edytorialną osią czasu (li
     </div>
 
     <div class="finished" id="finished-message">Czas dobiegł końca.</div>
-
-    <div class="timeline-container">
-      <div class="timeline-track">
-        <div class="timeline-fill" id="timeline-fill"></div>
-        <div class="timeline-marker" id="timeline-marker">
-          <span class="marker-value" id="percent-label">0.0%</span>
-          <div class="marker-dot"></div>
-        </div>
-      </div>
-
-      <div class="timeline-ticks">
-        <div class="tick major"></div>
-        <div class="tick"></div>
-        <div class="tick"></div>
-        <div class="tick"></div>
-        <div class="tick major"></div>
-        <div class="tick"></div>
-        <div class="tick"></div>
-        <div class="tick"></div>
-        <div class="tick major"></div>
-      </div>
-
-      <div class="timeline-labels">
-        <span>21.08</span>
-        <span>14.09</span>
-      </div>
-    </div>
   </main>
 
   <script>
-    const startDate = new Date("2026-08-21T00:00:00+02:00").getTime();
     const targetDate = new Date("2026-09-14T18:00:00+02:00").getTime();
-    const totalDuration = targetDate - startDate;
 
     const daysEl = document.getElementById("days");
     const hoursEl = document.getElementById("hours");
@@ -285,9 +166,6 @@ Zastąpiłem standardowy pasek postępu elegancką, edytorialną osią czasu (li
     const secondsEl = document.getElementById("seconds");
     const timerGrid = document.getElementById("timer");
     const finishedMsg = document.getElementById("finished-message");
-    const timelineFill = document.getElementById("timeline-fill");
-    const timelineMarker = document.getElementById("timeline-marker");
-    const percentLabel = document.getElementById("percent-label");
 
     function pad(num) {
       return String(num).padStart(2, "0");
@@ -297,21 +175,10 @@ Zastąpiłem standardowy pasek postępu elegancką, edytorialną osią czasu (li
       const now = new Date().getTime();
       const difference = targetDate - now;
 
-      const elapsed = Math.max(0, Math.min(now - startDate, totalDuration));
-      const ratio = elapsed / totalDuration;
-      const percentage = ratio * 100;
-      
-      timelineFill.style.width = percentage.toFixed(2) + "%";
-      timelineMarker.style.left = percentage.toFixed(2) + "%";
-      percentLabel.textContent = percentage.toFixed(1) + "%";
-
       if (difference <= 0) {
         clearInterval(interval);
         timerGrid.style.display = "none";
         finishedMsg.style.display = "block";
-        timelineFill.style.width = "100%";
-        timelineMarker.style.left = "100%";
-        percentLabel.textContent = "100%";
         return;
       }
 
@@ -331,4 +198,3 @@ Zastąpiłem standardowy pasek postępu elegancką, edytorialną osią czasu (li
   </script>
 </body>
 </html>
-
