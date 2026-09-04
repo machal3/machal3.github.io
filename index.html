@@ -1,24 +1,49 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="description" content="Minimalistyczne odliczanie do 14 września 2026 roku z ukrytą grą zręcznościową.">
+  <meta name="theme-color" content="#f7f6f2">
   <title>Odliczanie</title>
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;1,6..72,300&family=Space+Grotesk:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;1,6..72,300&amp;family=Space+Grotesk:wght@400;500;600&amp;display=swap" rel="stylesheet">
+
   <style>
-    * {
+    *,
+    *::before,
+    *::after {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
     }
 
     :root {
+      color-scheme: light;
       --bg: #f7f6f2;
       --text-main: #141414;
       --text-muted: #787570;
       --border-line: #dfdcd5;
+      --font-serif: "Newsreader", Garamond, Georgia, serif;
+      --font-sans: "Space Grotesk", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    [hidden] {
+      display: none !important;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
     }
 
     body {
@@ -27,57 +52,118 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      background-color: var(--bg);
+      background: var(--bg);
       color: var(--text-main);
-      padding: clamp(1.5rem, 5vw, 4rem) clamp(1.25rem, 6vw, 3rem);
       padding-top: max(clamp(1.5rem, 5vw, 4rem), env(safe-area-inset-top));
+      padding-right: max(clamp(1.25rem, 6vw, 3rem), env(safe-area-inset-right));
       padding-bottom: max(clamp(1.5rem, 5vw, 4rem), env(safe-area-inset-bottom));
       padding-left: max(clamp(1.25rem, 6vw, 3rem), env(safe-area-inset-left));
-      padding-right: max(clamp(1.25rem, 6vw, 3rem), env(safe-area-inset-right));
-      font-family: "Newsreader", Garamond, Georgia, serif;
+      overflow-x: hidden;
+      font-family: var(--font-serif);
       -webkit-font-smoothing: antialiased;
-      user-select: none;
-      -webkit-user-select: none;
+      text-rendering: optimizeLegibility;
+    }
+
+    body.in-game {
+      overflow: hidden;
+      touch-action: none;
+    }
+
+    button {
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    button:focus-visible,
+    canvas:focus-visible {
+      outline: 2px solid var(--text-main);
+      outline-offset: 3px;
     }
 
     main {
+      position: relative;
+      z-index: 1;
+      display: flex;
       width: 100%;
       max-width: 680px;
-      display: flex;
       flex-direction: column;
+      transition: opacity 0.35s ease, transform 0.35s ease;
+    }
+
+    body.in-game main {
+      opacity: 0.14;
+      transform: scale(0.98);
+      pointer-events: none;
     }
 
     header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
       margin-bottom: clamp(2rem, 4vw, 3rem);
     }
 
     .meta {
-      font-family: "Space Grotesk", sans-serif;
+      margin-bottom: clamp(0.75rem, 2vw, 1.25rem);
+      color: var(--text-muted);
+      font-family: var(--font-sans);
       font-size: clamp(0.68rem, 1.8vw, 0.75rem);
       letter-spacing: 0.16em;
       text-transform: uppercase;
-      color: var(--text-muted);
-      margin-bottom: clamp(0.75rem, 2vw, 1.25rem);
     }
 
     h1 {
+      color: var(--text-main);
       font-size: clamp(2.4rem, 7vw, 3.25rem);
       font-weight: 300;
       line-height: 1.05;
       letter-spacing: -0.025em;
+    }
+
+    .game-trigger-btn,
+    .btn-exit,
+    .btn-restart {
+      min-height: 44px;
+      border: 1px solid var(--border-line);
+      border-radius: 999px;
+      background: transparent;
       color: var(--text-main);
+      cursor: pointer;
+      font-family: var(--font-sans);
+      font-size: 0.7rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+    }
+
+    .game-trigger-btn {
+      margin-bottom: 0.25rem;
+      padding: 0.6rem 1.25rem;
+    }
+
+    .game-trigger-btn:hover,
+    .btn-exit:hover,
+    .btn-restart:hover {
+      border-color: var(--text-main);
+      background: var(--text-main);
+      color: var(--bg);
+    }
+
+    .game-trigger-btn:active,
+    .btn-exit:active,
+    .btn-restart:active {
+      transform: scale(0.97);
     }
 
     .rule {
       width: 100%;
       height: 1px;
-      background: var(--border-line);
       margin-bottom: clamp(2rem, 5vw, 3.5rem);
+      background: var(--border-line);
     }
 
     .grid {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: repeat(4, minmax(0, 1fr));
       column-gap: clamp(1rem, 3.5vw, 2.5rem);
       row-gap: clamp(1.75rem, 4vw, 2.5rem);
       margin-bottom: clamp(3rem, 7vw, 4.5rem);
@@ -85,35 +171,41 @@
 
     .unit {
       display: flex;
+      min-width: 0;
       flex-direction: column;
       align-items: flex-start;
     }
 
     .num {
-      font-family: "Newsreader", serif;
+      color: var(--text-main);
+      font-family: var(--font-serif);
       font-size: clamp(2.8rem, 8.5vw, 4.5rem);
+      font-variant-numeric: tabular-nums;
       font-weight: 300;
       line-height: 0.9;
       letter-spacing: -0.035em;
-      font-variant-numeric: tabular-nums;
-      color: var(--text-main);
     }
 
     .label {
-      font-family: "Space Grotesk", sans-serif;
+      margin-top: clamp(0.6rem, 1.5vw, 1rem);
+      color: var(--text-muted);
+      font-family: var(--font-sans);
       font-size: clamp(0.62rem, 1.6vw, 0.7rem);
       letter-spacing: 0.14em;
       text-transform: uppercase;
-      color: var(--text-muted);
-      margin-top: clamp(0.6rem, 1.5vw, 1rem);
+    }
+
+    .finished {
+      margin-bottom: 2.5rem;
+      color: var(--text-main);
+      font-size: clamp(1.4rem, 4vw, 1.75rem);
+      font-style: italic;
     }
 
     .timeline-container {
       position: relative;
       width: 100%;
       padding-top: 2rem;
-      cursor: pointer;
-      -webkit-tap-highlight-color: transparent;
     }
 
     .timeline-track {
@@ -127,47 +219,60 @@
       position: absolute;
       top: 0;
       left: 0;
+      width: 0;
       height: 1px;
       background: var(--text-main);
-      width: 0%;
       transition: width 0.15s ease-out;
     }
 
     .timeline-marker {
       position: absolute;
       top: 50%;
-      left: 0%;
-      transform: translate(-50%, -50%);
+      left: 3.5px;
       display: flex;
-      flex-direction: column;
       align-items: center;
-      transition: left 0.15s ease-out;
+      justify-content: center;
+      transform: translate(-50%, -50%);
       pointer-events: none;
+      transition: left 0.15s ease-out;
     }
 
     .marker-dot {
       width: 7px;
       height: 7px;
-      background: var(--bg);
       border: 1.5px solid var(--text-main);
       border-radius: 50%;
+      background: var(--bg);
     }
 
     .marker-value {
       position: absolute;
       bottom: 12px;
-      font-family: "Space Grotesk", sans-serif;
-      font-size: 0.68rem;
-      letter-spacing: 0.08em;
+      left: 50%;
       color: var(--text-main);
-      white-space: nowrap;
+      font-family: var(--font-sans);
+      font-size: 0.68rem;
       font-variant-numeric: tabular-nums;
+      letter-spacing: 0.08em;
+      white-space: nowrap;
+      transform: translateX(-50%);
+    }
+
+    .timeline-marker.near-start .marker-value {
+      left: 0;
+      transform: none;
+    }
+
+    .timeline-marker.near-end .marker-value {
+      right: 0;
+      left: auto;
+      transform: none;
     }
 
     .timeline-ticks {
       display: flex;
-      justify-content: space-between;
       width: 100%;
+      justify-content: space-between;
       margin-top: 6px;
     }
 
@@ -184,176 +289,1259 @@
 
     .timeline-labels {
       display: flex;
-      justify-content: space-between;
       align-items: center;
+      justify-content: space-between;
       margin-top: 0.75rem;
-      font-family: "Space Grotesk", sans-serif;
+      color: var(--text-muted);
+      font-family: var(--font-sans);
       font-size: 0.68rem;
       letter-spacing: 0.12em;
       text-transform: uppercase;
-      color: var(--text-muted);
     }
 
-    .finished {
-      display: none;
-      font-size: clamp(1.4rem, 4vw, 1.75rem);
-      font-style: italic;
+    .game-fullscreen-overlay {
+      position: fixed;
+      z-index: 999;
+      inset: 0;
+      display: flex;
+      width: 100vw;
+      height: 100vh;
+      height: 100dvh;
+      flex-direction: column;
+      visibility: hidden;
+      opacity: 0;
+      pointer-events: none;
+      background: rgba(247, 246, 242, 0.96);
+      transition: opacity 0.25s ease, visibility 0.25s;
+    }
+
+    body.in-game .game-fullscreen-overlay {
+      visibility: visible;
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .game-top-bar {
+      position: relative;
+      z-index: 1001;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding-top: max(0.85rem, env(safe-area-inset-top));
+      padding-right: max(1.25rem, env(safe-area-inset-right));
+      padding-bottom: 0.85rem;
+      padding-left: max(1.25rem, env(safe-area-inset-left));
+      border-bottom: 1px solid rgba(223, 220, 213, 0.8);
+      background: rgba(247, 246, 242, 0.74);
+      -webkit-backdrop-filter: blur(10px);
+      backdrop-filter: blur(10px);
+    }
+
+    .game-stats {
+      display: flex;
+      min-width: 0;
+      align-items: center;
+      gap: 1.5rem;
+      color: var(--text-muted);
+      font-family: var(--font-sans);
+      font-size: 0.8rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .game-stats strong {
       color: var(--text-main);
-      margin-bottom: 2.5rem;
+      font-variant-numeric: tabular-nums;
+      font-weight: 500;
+    }
+
+    .warp-pill {
+      padding: 0.25rem 0.65rem;
+      border: 1px solid var(--border-line);
+      border-radius: 999px;
+      background: rgba(247, 246, 242, 0.76);
+      color: var(--text-main);
+      font-size: 0.68rem;
+      white-space: nowrap;
+    }
+
+    .btn-exit {
+      flex: 0 0 auto;
+      padding: 0.45rem 1rem;
+      background: rgba(247, 246, 242, 0.9);
+    }
+
+    .canvas-wrap {
+      position: relative;
+      flex: 1;
+      width: 100%;
+      height: 100%;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    #gameCanvas {
+      position: absolute;
+      inset: 0;
+      display: block;
+      width: 100%;
+      height: 100%;
+      cursor: crosshair;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .game-hints {
+      position: absolute;
+      bottom: max(1.75rem, env(safe-area-inset-bottom));
+      left: 50%;
+      color: var(--text-muted);
+      font-family: var(--font-sans);
+      font-size: 0.68rem;
+      letter-spacing: 0.14em;
+      text-align: center;
+      text-transform: uppercase;
+      white-space: nowrap;
+      opacity: 1;
+      pointer-events: none;
+      transform: translateX(-50%);
+      transition: opacity 0.4s ease;
+    }
+
+    .game-hints.is-hidden {
+      opacity: 0;
+    }
+
+    .game-over-panel {
+      position: absolute;
+      z-index: 4;
+      top: 42%;
+      left: 50%;
+      width: min(88%, 420px);
+      padding: 1.4rem;
+      border: 1px solid rgba(223, 220, 213, 0.9);
+      border-radius: 18px;
+      background: rgba(247, 246, 242, 0.92);
+      text-align: center;
+      -webkit-backdrop-filter: blur(12px);
+      backdrop-filter: blur(12px);
+      transform: translate(-50%, -50%);
+    }
+
+    .game-over-panel h2 {
+      margin-bottom: 0.5rem;
+      font-size: clamp(1.8rem, 5.5vw, 2.4rem);
+      font-weight: 300;
+    }
+
+    .game-over-panel p {
+      margin-bottom: 0.45rem;
+      color: var(--text-muted);
+      font-family: var(--font-sans);
+      font-size: 0.72rem;
+      letter-spacing: 0.1em;
+      line-height: 1.5;
+      text-transform: uppercase;
+    }
+
+    .game-over-panel .rewind-status {
+      margin-bottom: 1.1rem;
+      font-size: 0.64rem;
+    }
+
+    .btn-restart {
+      padding: 0.55rem 1.15rem;
     }
 
     @media (max-width: 560px) {
-      .grid {
-        grid-template-columns: repeat(2, 1fr);
+      header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1.25rem;
       }
-      
+
+      .grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
       .unit {
-        border-bottom: 1px solid rgba(0, 0, 0, 0.04);
         padding-bottom: 0.75rem;
+        border-bottom: 1px solid rgba(20, 20, 20, 0.05);
+      }
+
+      .game-top-bar {
+        align-items: flex-start;
+      }
+
+      .game-stats {
+        display: grid;
+        grid-template-columns: repeat(2, max-content);
+        gap: 0.35rem 0.8rem;
+        font-size: 0.72rem;
+      }
+
+      .warp-pill {
+        grid-column: 1 / -1;
+        width: max-content;
+      }
+    }
+
+    @media (max-width: 370px) {
+      .game-top-bar {
+        gap: 0.55rem;
+        padding-right: max(0.85rem, env(safe-area-inset-right));
+        padding-left: max(0.85rem, env(safe-area-inset-left));
+      }
+
+      .game-stats {
+        gap: 0.3rem 0.55rem;
+        font-size: 0.66rem;
+        letter-spacing: 0.08em;
+      }
+
+      .btn-exit {
+        padding-inline: 0.75rem;
+      }
+
+      .game-hints {
+        max-width: calc(100% - 2rem);
+        white-space: normal;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
       }
     }
   </style>
 </head>
+
 <body>
-  <main>
+  <main id="countdown-content">
     <header>
-      <div class="meta">14 września 2026 — 18:00 CEST</div>
-      <h1>Odliczanie</h1>
+      <div>
+        <div class="meta">14 września 2026 — 18:00 CEST</div>
+        <h1>Odliczanie</h1>
+      </div>
+
+      <button
+        class="game-trigger-btn"
+        id="btn-start-game"
+        type="button"
+        aria-haspopup="dialog"
+        aria-controls="game-overlay"
+      >Zagraj</button>
     </header>
 
-    <div class="rule"></div>
+    <div class="rule" aria-hidden="true"></div>
 
-    <div class="grid" id="timer">
+    <div class="grid" id="timer" role="timer" aria-label="Pozostały czas">
       <div class="unit">
         <span class="num" id="days">00</span>
-        <span class="label">Dni</span>
+        <span class="label" id="days-label">Dni</span>
       </div>
       <div class="unit">
         <span class="num" id="hours">00</span>
-        <span class="label">Godzin</span>
+        <span class="label" id="hours-label">Godzin</span>
       </div>
       <div class="unit">
         <span class="num" id="minutes">00</span>
-        <span class="label">Minut</span>
+        <span class="label" id="minutes-label">Minut</span>
       </div>
       <div class="unit">
         <span class="num" id="seconds">00</span>
-        <span class="label">Sekund</span>
+        <span class="label" id="seconds-label">Sekund</span>
       </div>
     </div>
 
-    <div class="finished" id="finished-message">Czas dobiegł końca.</div>
+    <p class="sr-only" id="timer-announcement" aria-live="polite"></p>
+    <p class="finished" id="finished-message" role="status" hidden>Czas dobiegł końca.</p>
 
-    <div class="timeline-container" id="timeline">
+    <div
+      class="timeline-container"
+      id="timeline"
+      role="progressbar"
+      aria-label="Postęp odliczania"
+      aria-valuemin="0"
+      aria-valuemax="100"
+      aria-valuenow="0"
+      aria-valuetext="Minęło 0 procent"
+    >
       <div class="timeline-track">
         <div class="timeline-fill" id="timeline-fill"></div>
-        <div class="timeline-marker" id="timeline-marker">
-          <span class="marker-value" id="percent-label">0.0%</span>
-          <div class="marker-dot"></div>
+        <div class="timeline-marker near-start" id="timeline-marker">
+          <span class="marker-value" id="percent-label">0,0%</span>
+          <span class="marker-dot" aria-hidden="true"></span>
         </div>
       </div>
 
-      <div class="timeline-ticks">
-        <div class="tick major"></div>
-        <div class="tick"></div>
-        <div class="tick"></div>
-        <div class="tick"></div>
-        <div class="tick major"></div>
-        <div class="tick"></div>
-        <div class="tick"></div>
-        <div class="tick"></div>
-        <div class="tick major"></div>
+      <div class="timeline-ticks" aria-hidden="true">
+        <span class="tick major"></span>
+        <span class="tick"></span>
+        <span class="tick"></span>
+        <span class="tick"></span>
+        <span class="tick major"></span>
+        <span class="tick"></span>
+        <span class="tick"></span>
+        <span class="tick"></span>
+        <span class="tick major"></span>
       </div>
 
-      <div class="timeline-labels">
+      <div class="timeline-labels" aria-hidden="true">
         <span>21.08</span>
         <span>14.09</span>
       </div>
     </div>
   </main>
 
+  <section
+    class="game-fullscreen-overlay"
+    id="game-overlay"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="game-dialog-title"
+    aria-hidden="true"
+  >
+    <h2 class="sr-only" id="game-dialog-title">Gra w odbijanie piłki</h2>
+
+    <div class="game-top-bar">
+      <div class="game-stats" aria-label="Statystyki gry">
+        <span>Punkty: <strong id="current-score">0</strong></span>
+        <span>Rekord: <strong id="best-score">0</strong></span>
+        <span class="warp-pill" id="warp-summary">Skrócono: <strong>0 min</strong></span>
+      </div>
+
+      <button class="btn-exit" id="btn-exit-game" type="button">Zakończ</button>
+    </div>
+
+    <div class="canvas-wrap" id="canvas-wrap">
+      <canvas
+        id="gameCanvas"
+        tabindex="0"
+        role="img"
+        aria-label="Plansza gry. Przesuwaj palcem, kursorem albo strzałkami, aby odbijać piłkę."
+      >Twoja przeglądarka nie obsługuje elementu canvas.</canvas>
+
+      <div class="game-hints" id="game-hints" aria-hidden="true">Przesuń palcem, kursorem lub strzałkami</div>
+
+      <div class="game-over-panel" id="game-over-panel" role="status" hidden>
+        <h2 id="game-over-title">Koniec gry</h2>
+        <p id="game-over-score">Wynik: 0 — rekord: 0</p>
+        <p class="rewind-status">Czas wraca do normy…</p>
+        <button class="btn-restart" id="btn-restart-game" type="button">Zagraj ponownie</button>
+      </div>
+    </div>
+  </section>
+
+  <noscript>
+    <p>Do działania odliczania potrzebna jest obsługa JavaScript.</p>
+  </noscript>
+
   <script>
-    const startDate = new Date("2026-08-21T00:00:00+02:00").getTime();
-    const targetDate = new Date("2026-09-14T18:00:00+02:00").getTime();
-    const totalDuration = targetDate - startDate;
+    "use strict";
 
-    const daysEl = document.getElementById("days");
-    const hoursEl = document.getElementById("hours");
-    const minutesEl = document.getElementById("minutes");
-    const secondsEl = document.getElementById("seconds");
-    const timerGrid = document.getElementById("timer");
-    const finishedMsg = document.getElementById("finished-message");
-    const timelineFill = document.getElementById("timeline-fill");
-    const timelineMarker = document.getElementById("timeline-marker");
-    const percentLabel = document.getElementById("percent-label");
-    const timeline = document.getElementById("timeline");
+    document.addEventListener("DOMContentLoaded", () => {
+      /* ================= USTAWIENIA I ELEMENTY ================= */
+      const startDate = Date.parse("2026-08-21T00:00:00+02:00");
+      const targetDate = Date.parse("2026-09-14T18:00:00+02:00");
+      const totalDuration = targetDate - startDate;
+      const reducedMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
 
-    let isWarping = false;
-    let simulatedOffset = 0;
+      const countdownContent = document.getElementById("countdown-content");
+      const timerGrid = document.getElementById("timer");
+      const finishedMsg = document.getElementById("finished-message");
+      const timerAnnouncement = document.getElementById("timer-announcement");
+      const timeline = document.getElementById("timeline");
+      const timelineFill = document.getElementById("timeline-fill");
+      const timelineMarker = document.getElementById("timeline-marker");
+      const percentLabel = document.getElementById("percent-label");
 
-    function startWarp() {
-      isWarping = true;
-      if (navigator.vibrate) navigator.vibrate(25);
-    }
+      const valueElements = {
+        days: document.getElementById("days"),
+        hours: document.getElementById("hours"),
+        minutes: document.getElementById("minutes"),
+        seconds: document.getElementById("seconds")
+      };
 
-    function stopWarp() {
-      if (!isWarping) return;
-      isWarping = false;
-      simulatedOffset = 0;
-    }
+      const labelElements = {
+        days: document.getElementById("days-label"),
+        hours: document.getElementById("hours-label"),
+        minutes: document.getElementById("minutes-label"),
+        seconds: document.getElementById("seconds-label")
+      };
 
-    timeline.addEventListener("touchstart", startWarp, { passive: true });
-    window.addEventListener("touchend", stopWarp);
-    window.addEventListener("touchcancel", stopWarp);
-    timeline.addEventListener("mousedown", startWarp);
-    window.addEventListener("mouseup", stopWarp);
+      const gameOverlay = document.getElementById("game-overlay");
+      const canvasWrap = document.getElementById("canvas-wrap");
+      const canvas = document.getElementById("gameCanvas");
+      const ctx = canvas.getContext("2d", { alpha: true });
+      const btnStartGame = document.getElementById("btn-start-game");
+      const btnExitGame = document.getElementById("btn-exit-game");
+      const btnRestartGame = document.getElementById("btn-restart-game");
+      const currentScoreEl = document.getElementById("current-score");
+      const bestScoreEl = document.getElementById("best-score");
+      const warpSummaryEl = document.getElementById("warp-summary");
+      const gameHints = document.getElementById("game-hints");
+      const gameOverPanel = document.getElementById("game-over-panel");
+      const gameOverTitle = document.getElementById("game-over-title");
+      const gameOverScore = document.getElementById("game-over-score");
+      const rootStyles = getComputedStyle(document.documentElement);
+      const canvasSansFont = rootStyles.getPropertyValue("--font-sans").trim();
+      const canvasSerifFont = rootStyles.getPropertyValue("--font-serif").trim();
 
-    function pad(num) {
-      return String(num).padStart(2, "0");
-    }
+      let previousFocus = null;
+      let isGameRunning = false;
+      let isRewinding = false;
+      let targetTimeOffset = 0;
+      let currentTimeOffset = 0;
+      let lastRenderedPercentage = -1;
+      let lastAnnouncedMinute = null;
+      let clockTimeoutId = null;
+      let rewindAnimationId = null;
+      let lastRewindFrame = 0;
 
-    function updateCountdown() {
-      if (isWarping) {
-        simulatedOffset += 1000 * 60 * 60 * 3;
-        if (navigator.vibrate && Math.random() > 0.75) navigator.vibrate(10);
+      function setText(element, value) {
+        if (element && element.textContent !== value) element.textContent = value;
       }
 
-      const now = new Date().getTime() + simulatedOffset;
-      const difference = targetDate - now;
+      function pad(number) {
+        return String(number).padStart(2, "0");
+      }
 
-      const elapsed = Math.max(0, Math.min(now - startDate, totalDuration));
-      const ratio = elapsed / totalDuration;
-      const percentage = Math.min(100, ratio * 100);
-      
-      timelineFill.style.width = percentage.toFixed(2) + "%";
-      timelineMarker.style.left = percentage.toFixed(2) + "%";
-      percentLabel.textContent = isWarping ? "WARP " + percentage.toFixed(1) + "%" : percentage.toFixed(1) + "%";
+      function clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+      }
 
-      if (difference <= 0) {
-        timerGrid.style.display = "none";
-        finishedMsg.style.display = "block";
-        timelineFill.style.width = "100%";
-        timelineMarker.style.left = "100%";
-        percentLabel.textContent = "100%";
-        return;
+      function polishPlural(number, one, few, many) {
+        const absolute = Math.abs(number);
+        const lastTwo = absolute % 100;
+        const last = absolute % 10;
+
+        if (absolute === 1) return one;
+        if (last >= 2 && last <= 4 && (lastTwo < 12 || lastTwo > 14)) return few;
+        return many;
+      }
+
+      function formatWarpDuration(milliseconds) {
+        const totalMinutes = Math.floor(milliseconds / 60000);
+        const hours = Math.floor(totalMinutes / 60);
+        const minutes = totalMinutes % 60;
+
+        if (hours === 0) return `${minutes} min`;
+        return minutes > 0 ? `${hours} godz. ${minutes} min` : `${hours} godz.`;
+      }
+
+      function readHighScore() {
+        try {
+          const stored = Number.parseInt(localStorage.getItem("countdown_ball_highscore") || "0", 10);
+          return Number.isFinite(stored) && stored >= 0 ? stored : 0;
+        } catch (_error) {
+          return 0;
+        }
+      }
+
+      function saveHighScore(value) {
+        try {
+          localStorage.setItem("countdown_ball_highscore", String(value));
+        } catch (_error) {
+          // Rekord nadal działa do końca bieżącej sesji.
+        }
+      }
+
+      function vibrate(pattern) {
+        if (!reducedMotionQuery.matches && typeof navigator.vibrate === "function") {
+          navigator.vibrate(pattern);
+        }
+      }
+
+      /* ================= ODLICZANIE ================= */
+      function easeTimeOffset(dt) {
+        if (!isGameRunning && !isRewinding) return;
+
+        if (reducedMotionQuery.matches) {
+          currentTimeOffset = targetTimeOffset;
+        } else {
+          const easing = 1 - Math.exp(-5 * Math.max(0, dt));
+          currentTimeOffset += (targetTimeOffset - currentTimeOffset) * easing;
+        }
+
+        if (Math.abs(currentTimeOffset - targetTimeOffset) < 20) {
+          currentTimeOffset = targetTimeOffset;
+          if (isRewinding && targetTimeOffset === 0) isRewinding = false;
+        }
+      }
+
+      function renderCountdown(force = false) {
+        const now = Date.now() + currentTimeOffset;
+        const difference = targetDate - now;
+        const elapsed = clamp(now - startDate, 0, totalDuration);
+        const percentage = clamp((elapsed / totalDuration) * 100, 0, 100);
+
+        const boundaryChanged = (percentage === 0 || percentage === 100) && percentage !== lastRenderedPercentage;
+        if (force || boundaryChanged || Math.abs(percentage - lastRenderedPercentage) >= 0.002) {
+          const percentageCss = `${percentage.toFixed(3)}%`;
+          timelineFill.style.width = percentageCss;
+          timelineMarker.style.left = `clamp(3.5px, ${percentageCss}, calc(100% - 3.5px))`;
+          setText(percentLabel, `${percentage.toFixed(1).replace(".", ",")}%`);
+
+          timelineMarker.classList.toggle("near-start", percentage < 6);
+          timelineMarker.classList.toggle("near-end", percentage > 94);
+          timeline.setAttribute("aria-valuenow", percentage.toFixed(1));
+          timeline.setAttribute("aria-valuetext", `Minęło ${percentage.toFixed(1).replace(".", ",")} procent`);
+          lastRenderedPercentage = percentage;
+        }
+
+        if (difference <= 0) {
+          timerGrid.hidden = true;
+          finishedMsg.hidden = false;
+          timerGrid.setAttribute("aria-label", "Odliczanie zakończone");
+          return;
+        }
+
+        timerGrid.hidden = false;
+        finishedMsg.hidden = true;
+
+        const days = Math.floor(difference / 86400000);
+        const hours = Math.floor((difference % 86400000) / 3600000);
+        const minutes = Math.floor((difference % 3600000) / 60000);
+        const seconds = Math.floor((difference % 60000) / 1000);
+
+        setText(valueElements.days, pad(days));
+        setText(valueElements.hours, pad(hours));
+        setText(valueElements.minutes, pad(minutes));
+        setText(valueElements.seconds, pad(seconds));
+
+        setText(labelElements.days, polishPlural(days, "Dzień", "Dni", "Dni"));
+        setText(labelElements.hours, polishPlural(hours, "Godzina", "Godziny", "Godzin"));
+        setText(labelElements.minutes, polishPlural(minutes, "Minuta", "Minuty", "Minut"));
+        setText(labelElements.seconds, polishPlural(seconds, "Sekunda", "Sekundy", "Sekund"));
+
+        const accessibleTime = `${days} ${polishPlural(days, "dzień", "dni", "dni")}, ${hours} ${polishPlural(hours, "godzina", "godziny", "godzin")}, ${minutes} ${polishPlural(minutes, "minuta", "minuty", "minut")} i ${seconds} ${polishPlural(seconds, "sekunda", "sekundy", "sekund")}`;
+        timerGrid.setAttribute("aria-label", `Pozostało ${accessibleTime}`);
+
+        const remainingWholeMinutes = Math.floor(difference / 60000);
+        if (remainingWholeMinutes !== lastAnnouncedMinute) {
+          setText(timerAnnouncement, `Pozostało ${days} ${polishPlural(days, "dzień", "dni", "dni")}, ${hours} ${polishPlural(hours, "godzina", "godziny", "godzin")} i ${minutes} ${polishPlural(minutes, "minuta", "minuty", "minut")}.`);
+          lastAnnouncedMinute = remainingWholeMinutes;
+        }
+      }
+
+      function updateCountdown(dt = 0, force = false) {
+        easeTimeOffset(dt);
+        renderCountdown(force);
+      }
+
+      function scheduleClockTick() {
+        window.clearTimeout(clockTimeoutId);
+        if (isGameRunning || isRewinding) return;
+
+        const delayToNextSecond = 1000 - (Date.now() % 1000) + 20;
+        clockTimeoutId = window.setTimeout(() => {
+          updateCountdown(0);
+          scheduleClockTick();
+        }, delayToNextSecond);
+      }
+
+      function runRewindAnimation() {
+        cancelAnimationFrame(rewindAnimationId);
+        lastRewindFrame = performance.now();
+
+        function rewindFrame(now) {
+          const dt = Math.min(0.05, Math.max(0, (now - lastRewindFrame) / 1000));
+          lastRewindFrame = now;
+          updateCountdown(dt);
+
+          if (isRewinding && !isGameRunning) {
+            rewindAnimationId = requestAnimationFrame(rewindFrame);
+          } else if (!isGameRunning) {
+            updateCountdown(0, true);
+            scheduleClockTick();
+          }
+        }
+
+        rewindAnimationId = requestAnimationFrame(rewindFrame);
+      }
+
+      function triggerTimeRewind() {
+        targetTimeOffset = 0;
+        isRewinding = Math.abs(currentTimeOffset) >= 20;
+
+        if (!isGameRunning) {
+          if (isRewinding) runRewindAnimation();
+          else scheduleClockTick();
+        }
+      }
+
+      updateCountdown(0, true);
+      scheduleClockTick();
+
+      /* ================= SILNIK GRY ================= */
+      let animationId = null;
+      let lastFrameTime = performance.now();
+      let hitStopDuration = 0;
+      let hintHideTimeoutId = null;
+      let gameState = "ready";
+      let score = 0;
+      let highScore = readHighScore();
+      let isNewRecordAchieved = false;
+      let width = 0;
+      let height = 0;
+      let dpr = 1;
+      let activePointerId = null;
+      const pressedKeys = new Set();
+
+      setText(bestScoreEl, String(highScore));
+
+      const paddle = {
+        baseWidth: 120,
+        width: 120,
+        height: 5,
+        x: 0,
+        y: 0,
+        targetX: 0,
+        vx: 0,
+        bonusUntil: 0
+      };
+
+      const ball = {
+        x: 0,
+        y: 0,
+        radius: 6,
+        vx: 0,
+        vy: 0,
+        speed: 0
+      };
+
+      const TRAIL_LENGTH = 8;
+      const trailX = new Float32Array(TRAIL_LENGTH);
+      const trailY = new Float32Array(TRAIL_LENGTH);
+      let trailHead = 0;
+      let trailCount = 0;
+      let trailSampleAccumulator = 0;
+
+      const MAX_PARTICLES = 40;
+      const particles = Array.from({ length: MAX_PARTICLES }, () => ({
+        active: false,
+        x: 0,
+        y: 0,
+        vx: 0,
+        vy: 0,
+        alpha: 0,
+        size: 0
+      }));
+
+      const MAX_POPUPS = 8;
+      const popups = Array.from({ length: MAX_POPUPS }, () => ({
+        active: false,
+        x: 0,
+        y: 0,
+        text: "",
+        subtext: "",
+        isHighlight: false,
+        alpha: 0,
+        yOffset: 0
+      }));
+
+      const bonusOrb = {
+        active: false,
+        x: 0,
+        y: 0,
+        baseY: 0,
+        radius: 10,
+        pulse: 0,
+        floatOffset: 0
+      };
+
+      function resetEffects() {
+        particles.forEach((particle) => { particle.active = false; });
+        popups.forEach((popup) => { popup.active = false; });
+        bonusOrb.active = false;
+        trailHead = 0;
+        trailCount = 0;
+        trailSampleAccumulator = 0;
+      }
+
+      function resizeGameCanvas() {
+        const rect = canvasWrap.getBoundingClientRect();
+        if (rect.width <= 0 || rect.height <= 0) return;
+
+        const oldWidth = width;
+        const oldHeight = height;
+        const hadSize = oldWidth > 0 && oldHeight > 0;
+        const normalizedBallX = hadSize ? ball.x / oldWidth : 0.5;
+        const normalizedBallY = hadSize ? ball.y / oldHeight : 0.22;
+        const normalizedPaddleCenter = hadSize ? (paddle.targetX + paddle.width / 2) / oldWidth : 0.5;
+        const oldBallVx = ball.vx;
+        const oldBallVy = ball.vy;
+
+        dpr = Math.min(window.devicePixelRatio || 1, 2);
+        width = rect.width;
+        height = rect.height;
+
+        canvas.width = Math.round(width * dpr);
+        canvas.height = Math.round(height * dpr);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+        const isMobile = width < 680;
+        paddle.baseWidth = isMobile ? Math.max(90, width * 0.28) : Math.max(120, width * 0.17);
+        paddle.width = performance.now() < paddle.bonusUntil ? paddle.baseWidth * 1.38 : paddle.baseWidth;
+        paddle.height = isMobile ? 6 : 5;
+        paddle.y = isMobile ? height - 70 : height - 55;
+        paddle.targetX = clamp(normalizedPaddleCenter * width - paddle.width / 2, 0, width - paddle.width);
+        paddle.x = paddle.targetX;
+        ball.radius = clamp(width * 0.014, 5.5, 8);
+
+        if (hadSize && gameState !== "ready") {
+          ball.x = clamp(normalizedBallX * width, ball.radius, width - ball.radius);
+          ball.y = clamp(normalizedBallY * height, ball.radius, Math.max(ball.radius, paddle.y - ball.radius));
+
+          const velocityScale = height / oldHeight;
+          ball.vx = oldBallVx * velocityScale;
+          ball.vy = oldBallVy * velocityScale;
+          ball.speed = Math.hypot(ball.vx, ball.vy);
+
+          if (bonusOrb.active) {
+            bonusOrb.x = clamp((bonusOrb.x / oldWidth) * width, bonusOrb.radius, width - bonusOrb.radius);
+            bonusOrb.baseY = clamp((bonusOrb.baseY / oldHeight) * height, 40, height * 0.45);
+            bonusOrb.y = bonusOrb.baseY;
+          }
+        }
+      }
+
+      function initBall() {
+        ball.x = width / 2;
+        ball.y = height * 0.22;
+        ball.speed = height * 0.58;
+
+        trailHead = 0;
+        trailCount = 0;
+        trailSampleAccumulator = 0;
+
+        const horizontalDirection = Math.random() > 0.5 ? 1 : -1;
+        const horizontalShare = 0.32 + Math.random() * 0.2;
+        ball.vx = ball.speed * horizontalShare * horizontalDirection;
+        ball.vy = ball.speed * Math.sqrt(1 - horizontalShare * horizontalShare);
+      }
+
+      function spawnBonusOrb() {
+        bonusOrb.active = true;
+        bonusOrb.x = Math.random() * Math.max(1, width - 80) + 40;
+        bonusOrb.baseY = Math.random() * Math.max(1, height * 0.35) + 60;
+        bonusOrb.y = bonusOrb.baseY;
+        bonusOrb.radius = Math.max(8, Math.min(13, width * 0.02));
+        bonusOrb.pulse = 0;
+        bonusOrb.floatOffset = Math.random() * Math.PI * 2;
+      }
+
+      function createSparks(x, y, count = 8, isCentral = false) {
+        if (reducedMotionQuery.matches) return;
+
+        let spawned = 0;
+        for (const particle of particles) {
+          if (!particle.active && spawned < count) {
+            particle.active = true;
+            particle.x = x;
+            particle.y = y;
+
+            const angle = Math.random() * Math.PI * 2;
+            const speed = (Math.random() * 3 + 1.5) * (isCentral ? 1.6 : 1);
+            particle.vx = Math.cos(angle) * speed;
+            particle.vy = Math.sin(angle) * speed;
+            particle.alpha = 1;
+            particle.size = Math.random() * 2.5 + 1;
+            spawned += 1;
+          }
+        }
+      }
+
+      function addScorePopup(x, y, text, subtext = "", isHighlight = false) {
+        if (reducedMotionQuery.matches) return;
+
+        const popup = popups.find((item) => !item.active);
+        if (!popup) return;
+
+        Object.assign(popup, {
+          active: true,
+          x,
+          y,
+          text,
+          subtext,
+          isHighlight,
+          alpha: 1,
+          yOffset: 0
+        });
+      }
+
+      function updateWarpSummary() {
+        warpSummaryEl.innerHTML = `Skrócono: <strong>${formatWarpDuration(targetTimeOffset)}</strong>`;
+      }
+
+      function hideGameHintSoon() {
+        window.clearTimeout(hintHideTimeoutId);
+        gameHints.classList.remove("is-hidden");
+        hintHideTimeoutId = window.setTimeout(() => {
+          if (gameState === "playing") gameHints.classList.add("is-hidden");
+        }, 4200);
+      }
+
+      function prepareRound() {
+        gameState = "playing";
+        score = 0;
+        isNewRecordAchieved = false;
+        targetTimeOffset = 0;
+        currentTimeOffset = 0;
+        isRewinding = false;
+        hitStopDuration = 0;
+        paddle.bonusUntil = 0;
+
+        resetEffects();
+        setText(currentScoreEl, "0");
+        setText(bestScoreEl, String(highScore));
+        updateWarpSummary();
+        gameOverPanel.hidden = true;
+        setText(gameHints, "Przesuń palcem, kursorem lub strzałkami");
+        hideGameHintSoon();
+
+        paddle.width = paddle.baseWidth;
+        paddle.x = (width - paddle.width) / 2;
+        paddle.targetX = paddle.x;
+        initBall();
+        updateCountdown(0, true);
+      }
+
+      function startGame() {
+        previousFocus = document.activeElement;
+        window.clearTimeout(clockTimeoutId);
+        cancelAnimationFrame(rewindAnimationId);
+
+        document.body.classList.add("in-game");
+        countdownContent.inert = true;
+        gameOverlay.setAttribute("aria-hidden", "false");
+        isGameRunning = true;
+
+        resizeGameCanvas();
+        prepareRound();
+
+        lastFrameTime = performance.now();
+        cancelAnimationFrame(animationId);
+        animationId = requestAnimationFrame(gameLoop);
+        btnExitGame.focus({ preventScroll: true });
+      }
+
+      function exitGame() {
+        if (!isGameRunning) return;
+
+        isGameRunning = false;
+        pressedKeys.clear();
+        activePointerId = null;
+        window.clearTimeout(hintHideTimeoutId);
+        cancelAnimationFrame(animationId);
+        document.body.classList.remove("in-game");
+        countdownContent.inert = false;
+        gameOverlay.setAttribute("aria-hidden", "true");
+        triggerTimeRewind();
+
+        const focusTarget = previousFocus instanceof HTMLElement ? previousFocus : btnStartGame;
+        focusTarget.focus({ preventScroll: true });
+      }
+
+      function restartGame() {
+        if (!isGameRunning) return;
+        prepareRound();
+        canvas.focus({ preventScroll: true });
+      }
+
+      function endGame() {
+        if (gameState === "over") return;
+
+        gameState = "over";
+        gameHints.classList.remove("is-hidden");
+        setText(gameHints, "Możesz spróbować ponownie");
+        window.clearTimeout(hintHideTimeoutId);
+
+        if (isNewRecordAchieved && score > 0) {
+          setText(gameOverTitle, "Nowy rekord!");
+          setText(gameOverScore, `Twój najlepszy wynik: ${score} pkt`);
+        } else {
+          setText(gameOverTitle, "Koniec gry");
+          setText(gameOverScore, `Wynik: ${score} — rekord: ${highScore}`);
+        }
+
+        gameOverPanel.hidden = false;
+        triggerTimeRewind();
+        createSparks(ball.x, height - 12, 14);
+        vibrate([40, 60, 40]);
+        btnRestartGame.focus({ preventScroll: true });
+      }
+
+      btnStartGame.addEventListener("click", startGame);
+      btnExitGame.addEventListener("click", exitGame);
+      btnRestartGame.addEventListener("click", restartGame);
+
+      function setPaddleFromClientX(clientX, immediate = false) {
+        const rect = canvas.getBoundingClientRect();
+        const relativeX = clientX - rect.left;
+        const desiredX = relativeX - paddle.width / 2;
+        paddle.targetX = clamp(desiredX, 0, width - paddle.width);
+        if (immediate) paddle.x = paddle.targetX;
+      }
+
+      canvas.addEventListener("pointerdown", (event) => {
+        event.preventDefault();
+
+        if (gameState === "over") {
+          restartGame();
+          return;
+        }
+
+        activePointerId = event.pointerId;
+        canvas.setPointerCapture?.(event.pointerId);
+        setPaddleFromClientX(event.clientX, event.pointerType === "touch");
+      });
+
+      canvas.addEventListener("pointermove", (event) => {
+        const shouldFollow = event.pointerType === "mouse" || event.pointerId === activePointerId;
+        if (shouldFollow) {
+          setPaddleFromClientX(event.clientX, event.pointerType === "touch");
+        }
+      });
+
+      function releasePointer(event) {
+        if (event.pointerId === activePointerId) activePointerId = null;
+      }
+
+      canvas.addEventListener("pointerup", releasePointer);
+      canvas.addEventListener("pointercancel", releasePointer);
+
+      window.addEventListener("keydown", (event) => {
+        if (!isGameRunning) return;
+
+        if (event.key === "Escape") {
+          event.preventDefault();
+          exitGame();
+          return;
+        }
+
+        if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+          event.preventDefault();
+          pressedKeys.add(event.key);
+        }
+
+        if ((event.key === " " || event.key === "Enter") && gameState === "over") {
+          event.preventDefault();
+          restartGame();
+        }
+      });
+
+      window.addEventListener("keyup", (event) => {
+        pressedKeys.delete(event.key);
+      });
+
+      function updateHighScore() {
+        if (score <= highScore) return;
+
+        const recordWasAlreadyBeaten = isNewRecordAchieved;
+        highScore = score;
+        isNewRecordAchieved = true;
+        setText(bestScoreEl, String(highScore));
+        saveHighScore(highScore);
+
+        if (!recordWasAlreadyBeaten && highScore > 1) {
+          addScorePopup(width * 0.5, height * 0.38, "NOWY REKORD!", `${score} PKT`, true);
+          vibrate([35, 40, 35]);
+        }
+      }
+
+      function registerPaddleHit(contactX, now) {
+        ball.x = clamp(contactX, ball.radius, width - ball.radius);
+        ball.y = paddle.y - ball.radius;
+
+        const paddleCenter = paddle.x + paddle.width * 0.5;
+        const hitPoint = clamp((ball.x - paddleCenter) / (paddle.width * 0.5), -1, 1);
+        const isSweetSpot = Math.abs(hitPoint) < 0.18;
+        const maxAngle = 1.14;
+        const spinEffect = clamp((paddle.vx / width) * 0.5, -0.28, 0.28);
+        const randomVariation = reducedMotionQuery.matches ? 0 : (Math.random() - 0.5) * 0.12;
+        const bounceAngle = clamp(hitPoint * maxAngle + spinEffect + randomVariation, -maxAngle, maxAngle);
+
+        const maxSpeed = height * 1.15;
+        const speedIncrease = isSweetSpot ? height * 0.03 : height * 0.018;
+        ball.speed = Math.min(maxSpeed, ball.speed + speedIncrease);
+        ball.vx = Math.sin(bounceAngle) * ball.speed;
+        ball.vy = -Math.cos(bounceAngle) * ball.speed;
+
+        targetTimeOffset += isSweetSpot ? 20 * 60000 : 10 * 60000;
+        updateWarpSummary();
+
+        score += isSweetSpot ? 2 : 1;
+        setText(currentScoreEl, String(score));
+
+        if (isSweetSpot) {
+          if (!reducedMotionQuery.matches) hitStopDuration = 0.035;
+          createSparks(ball.x, paddle.y, 12, true);
+          addScorePopup(ball.x, paddle.y - 20, "ŚWIETNIE!", "−20 MINUT", true);
+          vibrate([15, 30, 20]);
+        } else {
+          createSparks(ball.x, paddle.y, 6);
+          addScorePopup(ball.x, paddle.y - 15, String(score), "−10 min");
+          vibrate(18);
+        }
+
+        updateHighScore();
+
+        if (score % 7 === 0 && !bonusOrb.active) spawnBonusOrb();
+        paddle.bonusUntil = Math.max(paddle.bonusUntil, now);
+      }
+
+      function updatePlayingState(dt, now) {
+        trailSampleAccumulator += dt;
+        while (trailSampleAccumulator >= 1 / 60) {
+          trailX[trailHead] = ball.x;
+          trailY[trailHead] = ball.y;
+          trailHead = (trailHead + 1) % TRAIL_LENGTH;
+          trailCount = Math.min(TRAIL_LENGTH, trailCount + 1);
+          trailSampleAccumulator -= 1 / 60;
+        }
+
+        const previousBallX = ball.x;
+        const previousBallY = ball.y;
+
+        ball.vy += height * 0.38 * dt;
+        ball.x += ball.vx * dt;
+        ball.y += ball.vy * dt;
+
+        if (ball.x - ball.radius <= 0) {
+          ball.x = ball.radius;
+          ball.vx = Math.abs(ball.vx);
+          createSparks(ball.x, ball.y, 3);
+        } else if (ball.x + ball.radius >= width) {
+          ball.x = width - ball.radius;
+          ball.vx = -Math.abs(ball.vx);
+          createSparks(ball.x, ball.y, 3);
+        }
+
+        if (ball.y - ball.radius <= 0) {
+          ball.y = ball.radius;
+          ball.vy = Math.abs(ball.vy);
+          createSparks(ball.x, ball.y, 3);
+        }
+
+        const previousBottom = previousBallY + ball.radius;
+        const currentBottom = ball.y + ball.radius;
+        const crossedPaddleTop = ball.vy > 0 && previousBottom <= paddle.y && currentBottom >= paddle.y;
+
+        if (crossedPaddleTop) {
+          const travelY = currentBottom - previousBottom;
+          const contactRatio = travelY > 0 ? clamp((paddle.y - previousBottom) / travelY, 0, 1) : 0;
+          const contactX = previousBallX + (ball.x - previousBallX) * contactRatio;
+          const inPaddleX = contactX >= paddle.x - ball.radius * 0.5 && contactX <= paddle.x + paddle.width + ball.radius * 0.5;
+
+          if (inPaddleX) registerPaddleHit(contactX, now);
+        }
+
+        if (bonusOrb.active) {
+          bonusOrb.pulse += 3 * dt;
+          bonusOrb.y = bonusOrb.baseY + Math.sin(bonusOrb.pulse + bonusOrb.floatOffset) * 6;
+
+          const dx = ball.x - bonusOrb.x;
+          const dy = ball.y - bonusOrb.y;
+          const radiusSum = ball.radius + bonusOrb.radius;
+
+          if (dx * dx + dy * dy < radiusSum * radiusSum) {
+            score += 3;
+            setText(currentScoreEl, String(score));
+            paddle.bonusUntil = now + 7500;
+            targetTimeOffset += 40 * 60000;
+            updateWarpSummary();
+            updateHighScore();
+
+            addScorePopup(bonusOrb.x, bonusOrb.y, "+3 BONUS", "−40 MINUT", true);
+            createSparks(bonusOrb.x, bonusOrb.y, 14, true);
+            bonusOrb.active = false;
+            vibrate([20, 30, 20]);
+          }
+        }
+
+        if (ball.y - ball.radius > height) endGame();
+      }
+
+      function updateEffects(dt) {
+        for (const particle of particles) {
+          if (!particle.active) continue;
+
+          particle.x += particle.vx * dt * 60;
+          particle.y += particle.vy * dt * 60;
+          particle.alpha -= 2.2 * dt;
+          if (particle.alpha <= 0) particle.active = false;
+        }
+
+        for (const popup of popups) {
+          if (!popup.active) continue;
+
+          popup.yOffset += 45 * dt;
+          popup.alpha -= 1.3 * dt;
+          if (popup.alpha <= 0) popup.active = false;
+        }
+      }
+
+      function drawGame(now) {
+        ctx.clearRect(0, 0, width, height);
+
+        if (!reducedMotionQuery.matches && trailCount > 0) {
+          ctx.fillStyle = "#141414";
+          for (let index = 0; index < trailCount; index += 1) {
+            const trailIndex = (trailHead - 1 - index + TRAIL_LENGTH) % TRAIL_LENGTH;
+            ctx.globalAlpha = (1 - index / trailCount) * 0.16;
+            ctx.beginPath();
+            ctx.arc(trailX[trailIndex], trailY[trailIndex], ball.radius * (1 - index / trailCount * 0.4), 0, Math.PI * 2);
+            ctx.fill();
+          }
+          ctx.globalAlpha = 1;
+        }
+
+        ctx.strokeStyle = "#dfdcd5";
+        ctx.lineWidth = 1;
+        const lineY = Math.round(paddle.y + paddle.height * 0.5) + 0.5;
+        ctx.beginPath();
+        ctx.moveTo(0, lineY);
+        ctx.lineTo(width, lineY);
+        ctx.stroke();
+
+        if (bonusOrb.active) {
+          const currentRadius = bonusOrb.radius + Math.sin(bonusOrb.pulse) * 1.5;
+          ctx.strokeStyle = "#141414";
+          ctx.lineWidth = 1.2;
+          ctx.beginPath();
+          ctx.arc(bonusOrb.x, bonusOrb.y, currentRadius, 0, Math.PI * 2);
+          ctx.stroke();
+
+          ctx.fillStyle = "#141414";
+          ctx.beginPath();
+          ctx.arc(bonusOrb.x, bonusOrb.y, 2.5, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        const paddleX = Math.round(paddle.x);
+        const paddleY = Math.round(paddle.y);
+        const paddleWidth = Math.round(paddle.width);
+        const paddleHeight = Math.round(paddle.height);
+
+        ctx.fillStyle = "#141414";
+        ctx.fillRect(paddleX, paddleY, paddleWidth, paddleHeight);
+
+        ctx.fillStyle = "rgba(247, 246, 242, 0.62)";
+        const sweetSpotWidth = Math.round(paddleWidth * 0.22);
+        ctx.fillRect(paddleX + Math.round((paddleWidth - sweetSpotWidth) / 2), paddleY, sweetSpotWidth, paddleHeight);
+
+        if (now < paddle.bonusUntil) {
+          const remaining = clamp((paddle.bonusUntil - now) / 7500, 0, 1);
+          ctx.fillStyle = "#787570";
+          ctx.fillRect(paddleX, paddleY + paddleHeight + 4, Math.round(paddleWidth * remaining), 1.5);
+        }
+
+        ctx.beginPath();
+        ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+        ctx.fillStyle = "#f7f6f2";
+        ctx.fill();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = "#141414";
+        ctx.stroke();
+
+        for (const particle of particles) {
+          if (!particle.active) continue;
+          ctx.fillStyle = `rgba(20, 20, 20, ${particle.alpha})`;
+          ctx.beginPath();
+          ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        for (const popup of popups) {
+          if (!popup.active) continue;
+
+          ctx.textAlign = "center";
+          ctx.fillStyle = `rgba(20, 20, 20, ${popup.alpha})`;
+
+          if (popup.isHighlight) {
+            ctx.font = `600 12px ${canvasSansFont}`;
+          } else {
+            ctx.font = `300 20px ${canvasSerifFont}`;
+          }
+
+          ctx.fillText(popup.text, popup.x, popup.y - popup.yOffset);
+
+          if (popup.subtext) {
+            ctx.font = `500 ${popup.isHighlight ? 10 : 9}px ${canvasSansFont}`;
+            ctx.fillStyle = `rgba(120, 117, 112, ${popup.alpha})`;
+            ctx.fillText(popup.subtext, popup.x, popup.y - popup.yOffset + (popup.isHighlight ? 12 : 11));
+          }
+        }
+      }
+
+      function gameLoop(now) {
+        if (!isGameRunning) return;
+
+        const rawDt = (now - lastFrameTime) / 1000;
+        const dt = Math.min(0.05, Math.max(0.001, rawDt));
+        lastFrameTime = now;
+        updateCountdown(dt);
+
+        if (hitStopDuration > 0) {
+          hitStopDuration -= dt;
+          drawGame(now);
+          animationId = requestAnimationFrame(gameLoop);
+          return;
+        }
+
+        const keyboardDirection = (pressedKeys.has("ArrowRight") ? 1 : 0) - (pressedKeys.has("ArrowLeft") ? 1 : 0);
+        if (keyboardDirection !== 0) {
+          paddle.targetX = clamp(paddle.targetX + keyboardDirection * width * 0.82 * dt, 0, width - paddle.width);
+        }
+
+        const previousPaddleX = paddle.x;
+        const lerpFactor = 1 - Math.exp(-24 * dt);
+        paddle.x += (paddle.targetX - paddle.x) * lerpFactor;
+        paddle.vx = (paddle.x - previousPaddleX) / dt;
+
+        const nextPaddleWidth = now < paddle.bonusUntil ? paddle.baseWidth * 1.38 : paddle.baseWidth;
+        if (nextPaddleWidth !== paddle.width) {
+          const center = paddle.x + paddle.width / 2;
+          paddle.width = nextPaddleWidth;
+          paddle.x = clamp(center - paddle.width / 2, 0, width - paddle.width);
+          paddle.targetX = clamp(paddle.targetX, 0, width - paddle.width);
+        }
+
+        if (gameState === "playing") updatePlayingState(dt, now);
+        updateEffects(dt);
+        drawGame(now);
+        animationId = requestAnimationFrame(gameLoop);
+      }
+
+      const resizeObserver = typeof ResizeObserver === "function"
+        ? new ResizeObserver(() => {
+            if (isGameRunning) resizeGameCanvas();
+          })
+        : null;
+
+      if (resizeObserver) {
+        resizeObserver.observe(canvasWrap);
       } else {
-        timerGrid.style.display = "grid";
-        finishedMsg.style.display = "none";
+        window.addEventListener("resize", () => {
+          if (isGameRunning) resizeGameCanvas();
+        });
       }
 
-      const days = Math.floor(difference / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((difference % (1000 * 60)) / 1000);
-
-      daysEl.textContent = pad(days);
-      hoursEl.textContent = pad(hours);
-      minutesEl.textContent = pad(minutes);
-      secondsEl.textContent = pad(seconds);
-    }
-
-    updateCountdown();
-    setInterval(updateCountdown, 50);
+      document.addEventListener("visibilitychange", () => {
+        if (document.hidden || !isGameRunning) return;
+        lastFrameTime = performance.now();
+      });
+    });
   </script>
 </body>
 </html>
