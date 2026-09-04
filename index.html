@@ -90,8 +90,8 @@
     }
 
     body.in-game main {
-      opacity: 0.14;
-      transform: scale(0.98);
+      opacity: 0;
+      transform: none;
       pointer-events: none;
     }
 
@@ -311,7 +311,7 @@
       visibility: hidden;
       opacity: 0;
       pointer-events: none;
-      background: rgba(247, 246, 242, 0.96);
+      background: transparent;
       transition: opacity 0.25s ease, visibility 0.25s;
     }
 
@@ -381,8 +381,67 @@
       overflow: hidden;
     }
 
+    .game-background-time {
+      position: fixed;
+      z-index: 0;
+      top: 0;
+      left: 0;
+      display: grid;
+      width: 0;
+      max-width: none;
+      height: 0;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      column-gap: clamp(1rem, 3.5vw, 2.5rem);
+      row-gap: clamp(1.75rem, 4vw, 2.5rem);
+      margin: 0;
+      color: var(--text-main);
+      opacity: 0.13;
+      pointer-events: none;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .game-background-unit {
+      display: flex;
+      min-width: 0;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .game-background-num {
+      font-family: var(--font-serif);
+      font-size: clamp(2.8rem, 8.5vw, 4.5rem);
+      font-variant-numeric: tabular-nums;
+      font-weight: 300;
+      line-height: 0.9;
+      letter-spacing: -0.035em;
+    }
+
+    .game-background-label {
+      margin-top: clamp(0.6rem, 1.5vw, 1rem);
+      font-family: var(--font-sans);
+      font-size: clamp(0.62rem, 1.6vw, 0.7rem);
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    .game-background-timeline {
+      position: fixed;
+      z-index: 0;
+      top: 0;
+      left: 0;
+      width: 0;
+      height: 0;
+      margin: 0;
+      opacity: 0.2;
+      pointer-events: none;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
     #gameCanvas {
       position: absolute;
+      z-index: 1;
       inset: 0;
       display: block;
       width: 100%;
@@ -395,6 +454,7 @@
 
     .game-hints {
       position: absolute;
+      z-index: 2;
       bottom: max(1.75rem, env(safe-area-inset-bottom));
       left: 50%;
       color: var(--text-muted);
@@ -485,6 +545,10 @@
       .warp-pill {
         grid-column: 1 / -1;
         width: max-content;
+      }
+
+      .game-background-time {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
       }
     }
 
@@ -623,6 +687,52 @@
     </div>
 
     <div class="canvas-wrap" id="canvas-wrap">
+      <div class="grid game-background-time" id="game-background-time" aria-hidden="true">
+        <div class="unit game-background-unit">
+          <span class="num game-background-num" id="game-bg-days">00</span>
+          <span class="label game-background-label" id="game-bg-days-label">Dni</span>
+        </div>
+        <div class="unit game-background-unit">
+          <span class="num game-background-num" id="game-bg-hours">00</span>
+          <span class="label game-background-label" id="game-bg-hours-label">Godzin</span>
+        </div>
+        <div class="unit game-background-unit">
+          <span class="num game-background-num" id="game-bg-minutes">00</span>
+          <span class="label game-background-label" id="game-bg-minutes-label">Minut</span>
+        </div>
+        <div class="unit game-background-unit">
+          <span class="num game-background-num" id="game-bg-seconds">00</span>
+          <span class="label game-background-label" id="game-bg-seconds-label">Sekund</span>
+        </div>
+      </div>
+
+      <div class="timeline-container game-background-timeline" id="game-background-timeline" aria-hidden="true">
+        <div class="timeline-track">
+          <div class="timeline-fill" id="game-bg-timeline-fill"></div>
+          <div class="timeline-marker near-start" id="game-bg-timeline-marker">
+            <span class="marker-value" id="game-bg-percent-label">0,0%</span>
+            <span class="marker-dot"></span>
+          </div>
+        </div>
+
+        <div class="timeline-ticks">
+          <span class="tick major"></span>
+          <span class="tick"></span>
+          <span class="tick"></span>
+          <span class="tick"></span>
+          <span class="tick major"></span>
+          <span class="tick"></span>
+          <span class="tick"></span>
+          <span class="tick"></span>
+          <span class="tick major"></span>
+        </div>
+
+        <div class="timeline-labels">
+          <span>21.08</span>
+          <span>14.09</span>
+        </div>
+      </div>
+
       <canvas
         id="gameCanvas"
         tabindex="0"
@@ -678,7 +788,26 @@
         seconds: document.getElementById("seconds-label")
       };
 
+      const gameBackgroundValueElements = {
+        days: document.getElementById("game-bg-days"),
+        hours: document.getElementById("game-bg-hours"),
+        minutes: document.getElementById("game-bg-minutes"),
+        seconds: document.getElementById("game-bg-seconds")
+      };
+
+      const gameBackgroundLabelElements = {
+        days: document.getElementById("game-bg-days-label"),
+        hours: document.getElementById("game-bg-hours-label"),
+        minutes: document.getElementById("game-bg-minutes-label"),
+        seconds: document.getElementById("game-bg-seconds-label")
+      };
+
       const gameOverlay = document.getElementById("game-overlay");
+      const gameBackgroundTime = document.getElementById("game-background-time");
+      const gameBackgroundTimeline = document.getElementById("game-background-timeline");
+      const gameBackgroundTimelineFill = document.getElementById("game-bg-timeline-fill");
+      const gameBackgroundTimelineMarker = document.getElementById("game-bg-timeline-marker");
+      const gameBackgroundPercentLabel = document.getElementById("game-bg-percent-label");
       const canvasWrap = document.getElementById("canvas-wrap");
       const canvas = document.getElementById("gameCanvas");
       const ctx = canvas.getContext("2d", { alpha: true });
@@ -706,6 +835,15 @@
       let clockTimeoutId = null;
       let rewindAnimationId = null;
       let lastRewindFrame = 0;
+      let rewindStartOffset = 0;
+      let rewindElapsed = 0;
+      let rewindDuration = 1.35;
+
+      const TIME_REWARDS_MINUTES = Object.freeze({
+        regularHit: 15,
+        sweetSpot: 30,
+        bonusOrb: 60
+      });
 
       function setText(element, value) {
         if (element && element.textContent !== value) element.textContent = value;
@@ -767,15 +905,35 @@
 
         if (reducedMotionQuery.matches) {
           currentTimeOffset = targetTimeOffset;
-        } else {
+          isRewinding = false;
+        } else if (isRewinding) {
+          rewindElapsed = Math.min(rewindDuration, rewindElapsed + Math.max(0, dt));
+          const progress = rewindDuration > 0 ? rewindElapsed / rewindDuration : 1;
+          const easedProgress = progress * progress * (3 - 2 * progress);
+          currentTimeOffset = rewindStartOffset * (1 - easedProgress);
+
+          if (progress >= 1 || Math.abs(currentTimeOffset) < 20) {
+            currentTimeOffset = 0;
+            targetTimeOffset = 0;
+            isRewinding = false;
+          }
+        } else if (isGameRunning) {
           const easing = 1 - Math.exp(-5 * Math.max(0, dt));
           currentTimeOffset += (targetTimeOffset - currentTimeOffset) * easing;
-        }
 
-        if (Math.abs(currentTimeOffset - targetTimeOffset) < 20) {
-          currentTimeOffset = targetTimeOffset;
-          if (isRewinding && targetTimeOffset === 0) isRewinding = false;
+          if (Math.abs(currentTimeOffset - targetTimeOffset) < 20) {
+            currentTimeOffset = targetTimeOffset;
+          }
         }
+      }
+
+      function renderProgressVisual(fill, marker, label, percentage) {
+        const percentageCss = `${percentage.toFixed(3)}%`;
+        fill.style.width = percentageCss;
+        marker.style.left = `clamp(3.5px, ${percentageCss}, calc(100% - 3.5px))`;
+        setText(label, `${percentage.toFixed(1).replace(".", ",")}%`);
+        marker.classList.toggle("near-start", percentage < 6);
+        marker.classList.toggle("near-end", percentage > 94);
       }
 
       function renderCountdown(force = false) {
@@ -785,23 +943,30 @@
         const percentage = clamp((elapsed / totalDuration) * 100, 0, 100);
 
         const boundaryChanged = (percentage === 0 || percentage === 100) && percentage !== lastRenderedPercentage;
-        if (force || boundaryChanged || Math.abs(percentage - lastRenderedPercentage) >= 0.002) {
-          const percentageCss = `${percentage.toFixed(3)}%`;
-          timelineFill.style.width = percentageCss;
-          timelineMarker.style.left = `clamp(3.5px, ${percentageCss}, calc(100% - 3.5px))`;
-          setText(percentLabel, `${percentage.toFixed(1).replace(".", ",")}%`);
+        const minimumPercentageStep = isGameRunning || isRewinding ? 0.0001 : 0.002;
+        if (force || boundaryChanged || Math.abs(percentage - lastRenderedPercentage) >= minimumPercentageStep) {
+          renderProgressVisual(timelineFill, timelineMarker, percentLabel, percentage);
+          renderProgressVisual(
+            gameBackgroundTimelineFill,
+            gameBackgroundTimelineMarker,
+            gameBackgroundPercentLabel,
+            percentage
+          );
 
-          timelineMarker.classList.toggle("near-start", percentage < 6);
-          timelineMarker.classList.toggle("near-end", percentage > 94);
           timeline.setAttribute("aria-valuenow", percentage.toFixed(1));
           timeline.setAttribute("aria-valuetext", `Minęło ${percentage.toFixed(1).replace(".", ",")} procent`);
           lastRenderedPercentage = percentage;
         }
 
         if (difference <= 0) {
-          timerGrid.hidden = true;
-          finishedMsg.hidden = false;
+          const keepTimerPosition = isGameRunning || isRewinding;
+          timerGrid.hidden = !keepTimerPosition;
+          finishedMsg.hidden = keepTimerPosition;
           timerGrid.setAttribute("aria-label", "Odliczanie zakończone");
+          setText(gameBackgroundValueElements.days, "00");
+          setText(gameBackgroundValueElements.hours, "00");
+          setText(gameBackgroundValueElements.minutes, "00");
+          setText(gameBackgroundValueElements.seconds, "00");
           return;
         }
 
@@ -817,11 +982,19 @@
         setText(valueElements.hours, pad(hours));
         setText(valueElements.minutes, pad(minutes));
         setText(valueElements.seconds, pad(seconds));
+        setText(gameBackgroundValueElements.days, pad(days));
+        setText(gameBackgroundValueElements.hours, pad(hours));
+        setText(gameBackgroundValueElements.minutes, pad(minutes));
+        setText(gameBackgroundValueElements.seconds, pad(seconds));
 
         setText(labelElements.days, polishPlural(days, "Dzień", "Dni", "Dni"));
         setText(labelElements.hours, polishPlural(hours, "Godzina", "Godziny", "Godzin"));
         setText(labelElements.minutes, polishPlural(minutes, "Minuta", "Minuty", "Minut"));
         setText(labelElements.seconds, polishPlural(seconds, "Sekunda", "Sekundy", "Sekund"));
+        setText(gameBackgroundLabelElements.days, polishPlural(days, "Dzień", "Dni", "Dni"));
+        setText(gameBackgroundLabelElements.hours, polishPlural(hours, "Godzina", "Godziny", "Godzin"));
+        setText(gameBackgroundLabelElements.minutes, polishPlural(minutes, "Minuta", "Minuty", "Minut"));
+        setText(gameBackgroundLabelElements.seconds, polishPlural(seconds, "Sekunda", "Sekundy", "Sekund"));
 
         const accessibleTime = `${days} ${polishPlural(days, "dzień", "dni", "dni")}, ${hours} ${polishPlural(hours, "godzina", "godziny", "godzin")}, ${minutes} ${polishPlural(minutes, "minuta", "minuty", "minut")} i ${seconds} ${polishPlural(seconds, "sekunda", "sekundy", "sekund")}`;
         timerGrid.setAttribute("aria-label", `Pozostało ${accessibleTime}`);
@@ -871,7 +1044,16 @@
 
       function triggerTimeRewind() {
         targetTimeOffset = 0;
+        rewindStartOffset = currentTimeOffset;
+        rewindElapsed = 0;
+        rewindDuration = clamp(
+          1.35 + (Math.abs(currentTimeOffset) / 3600000) * 0.35,
+          1.35,
+          2.8
+        );
         isRewinding = Math.abs(currentTimeOffset) >= 20;
+
+        if (!isRewinding) currentTimeOffset = 0;
 
         if (!isGameRunning) {
           if (isRewinding) runRewindAnimation();
@@ -916,7 +1098,12 @@
         radius: 6,
         vx: 0,
         vy: 0,
-        speed: 0
+        speed: 0,
+        launchStartSpeed: 0,
+        launchTargetSpeed: 0,
+        launchElapsed: 0,
+        launchDuration: 3,
+        launching: false
       };
 
       const TRAIL_LENGTH = 8;
@@ -1006,6 +1193,8 @@
           ball.vx = oldBallVx * velocityScale;
           ball.vy = oldBallVy * velocityScale;
           ball.speed = Math.hypot(ball.vx, ball.vy);
+          ball.launchStartSpeed *= velocityScale;
+          ball.launchTargetSpeed *= velocityScale;
 
           if (bonusOrb.active) {
             bonusOrb.x = clamp((bonusOrb.x / oldWidth) * width, bonusOrb.radius, width - bonusOrb.radius);
@@ -1018,7 +1207,12 @@
       function initBall() {
         ball.x = width / 2;
         ball.y = height * 0.22;
-        ball.speed = height * 0.58;
+        ball.launchStartSpeed = height * 0.16;
+        ball.launchTargetSpeed = height * 0.5;
+        ball.launchElapsed = 0;
+        ball.launchDuration = 3;
+        ball.launching = true;
+        ball.speed = ball.launchStartSpeed;
 
         trailHead = 0;
         trailCount = 0;
@@ -1091,13 +1285,26 @@
         }, 4200);
       }
 
-      function prepareRound() {
+      function prepareRound(preserveTimeReturn = false) {
+        const preservedOffset = preserveTimeReturn ? currentTimeOffset : 0;
+
         gameState = "playing";
         score = 0;
         isNewRecordAchieved = false;
         targetTimeOffset = 0;
-        currentTimeOffset = 0;
-        isRewinding = false;
+        currentTimeOffset = preservedOffset;
+        isRewinding = preserveTimeReturn && Math.abs(preservedOffset) >= 20;
+
+        if (isRewinding) {
+          rewindStartOffset = preservedOffset;
+          rewindElapsed = 0;
+          rewindDuration = clamp(
+            1.35 + (Math.abs(preservedOffset) / 3600000) * 0.35,
+            1.35,
+            2.8
+          );
+        }
+
         hitStopDuration = 0;
         paddle.bonusUntil = 0;
 
@@ -1116,10 +1323,31 @@
         updateCountdown(0, true);
       }
 
+      function syncGameBackgroundToCountdown() {
+        const timerRect = timerGrid.getBoundingClientRect();
+        if (timerRect.width >= 1 && timerRect.height >= 1) {
+          gameBackgroundTime.style.left = `${timerRect.left}px`;
+          gameBackgroundTime.style.top = `${timerRect.top}px`;
+          gameBackgroundTime.style.width = `${timerRect.width}px`;
+          gameBackgroundTime.style.height = `${timerRect.height}px`;
+        }
+
+        const timelineRect = timeline.getBoundingClientRect();
+        if (timelineRect.width >= 1 && timelineRect.height >= 1) {
+          gameBackgroundTimeline.style.left = `${timelineRect.left}px`;
+          gameBackgroundTimeline.style.top = `${timelineRect.top}px`;
+          gameBackgroundTimeline.style.width = `${timelineRect.width}px`;
+          gameBackgroundTimeline.style.height = `${timelineRect.height}px`;
+        }
+      }
+
       function startGame() {
+        const preserveTimeReturn = isRewinding || Math.abs(currentTimeOffset) >= 20;
         previousFocus = document.activeElement;
         window.clearTimeout(clockTimeoutId);
         cancelAnimationFrame(rewindAnimationId);
+
+        syncGameBackgroundToCountdown();
 
         document.body.classList.add("in-game");
         countdownContent.inert = true;
@@ -1127,7 +1355,7 @@
         isGameRunning = true;
 
         resizeGameCanvas();
-        prepareRound();
+        prepareRound(preserveTimeReturn);
 
         lastFrameTime = performance.now();
         cancelAnimationFrame(animationId);
@@ -1154,7 +1382,8 @@
 
       function restartGame() {
         if (!isGameRunning) return;
-        prepareRound();
+        const preserveTimeReturn = isRewinding || Math.abs(currentTimeOffset) >= 20;
+        prepareRound(preserveTimeReturn);
         canvas.focus({ preventScroll: true });
       }
 
@@ -1262,6 +1491,7 @@
       function registerPaddleHit(contactX, now) {
         ball.x = clamp(contactX, ball.radius, width - ball.radius);
         ball.y = paddle.y - ball.radius;
+        ball.launching = false;
 
         const paddleCenter = paddle.x + paddle.width * 0.5;
         const hitPoint = clamp((ball.x - paddleCenter) / (paddle.width * 0.5), -1, 1);
@@ -1277,7 +1507,10 @@
         ball.vx = Math.sin(bounceAngle) * ball.speed;
         ball.vy = -Math.cos(bounceAngle) * ball.speed;
 
-        targetTimeOffset += isSweetSpot ? 20 * 60000 : 10 * 60000;
+        const timeRewardMinutes = isSweetSpot
+          ? TIME_REWARDS_MINUTES.sweetSpot
+          : TIME_REWARDS_MINUTES.regularHit;
+        targetTimeOffset += timeRewardMinutes * 60000;
         updateWarpSummary();
 
         score += isSweetSpot ? 2 : 1;
@@ -1286,11 +1519,11 @@
         if (isSweetSpot) {
           if (!reducedMotionQuery.matches) hitStopDuration = 0.035;
           createSparks(ball.x, paddle.y, 12, true);
-          addScorePopup(ball.x, paddle.y - 20, "ŚWIETNIE!", "−20 MINUT", true);
+          addScorePopup(ball.x, paddle.y - 20, "ŚWIETNIE!", `−${TIME_REWARDS_MINUTES.sweetSpot} MINUT`, true);
           vibrate([15, 30, 20]);
         } else {
           createSparks(ball.x, paddle.y, 6);
-          addScorePopup(ball.x, paddle.y - 15, String(score), "−10 min");
+          addScorePopup(ball.x, paddle.y - 15, String(score), `−${TIME_REWARDS_MINUTES.regularHit} min`);
           vibrate(18);
         }
 
@@ -1301,6 +1534,24 @@
       }
 
       function updatePlayingState(dt, now) {
+        if (ball.launching) {
+          ball.launchElapsed = Math.min(ball.launchDuration, ball.launchElapsed + dt);
+          const progress = ball.launchElapsed / ball.launchDuration;
+          const easedProgress = progress * progress * (3 - 2 * progress);
+          const desiredSpeed = ball.launchStartSpeed
+            + (ball.launchTargetSpeed - ball.launchStartSpeed) * easedProgress;
+          const currentVelocity = Math.hypot(ball.vx, ball.vy);
+
+          if (currentVelocity > 0) {
+            const velocityScale = desiredSpeed / currentVelocity;
+            ball.vx *= velocityScale;
+            ball.vy *= velocityScale;
+          }
+
+          ball.speed = desiredSpeed;
+          if (progress >= 1) ball.launching = false;
+        }
+
         trailSampleAccumulator += dt;
         while (trailSampleAccumulator >= 1 / 60) {
           trailX[trailHead] = ball.x;
@@ -1358,11 +1609,11 @@
             score += 3;
             setText(currentScoreEl, String(score));
             paddle.bonusUntil = now + 7500;
-            targetTimeOffset += 40 * 60000;
+            targetTimeOffset += TIME_REWARDS_MINUTES.bonusOrb * 60000;
             updateWarpSummary();
             updateHighScore();
 
-            addScorePopup(bonusOrb.x, bonusOrb.y, "+3 BONUS", "−40 MINUT", true);
+            addScorePopup(bonusOrb.x, bonusOrb.y, "+3 BONUS", `−${TIME_REWARDS_MINUTES.bonusOrb} MINUT`, true);
             createSparks(bonusOrb.x, bonusOrb.y, 14, true);
             bonusOrb.active = false;
             vibrate([20, 30, 20]);
@@ -1525,15 +1776,28 @@
 
       const resizeObserver = typeof ResizeObserver === "function"
         ? new ResizeObserver(() => {
-            if (isGameRunning) resizeGameCanvas();
+            if (isGameRunning) {
+              syncGameBackgroundToCountdown();
+              resizeGameCanvas();
+            }
           })
         : null;
 
       if (resizeObserver) {
         resizeObserver.observe(canvasWrap);
-      } else {
-        window.addEventListener("resize", () => {
-          if (isGameRunning) resizeGameCanvas();
+        resizeObserver.observe(timerGrid);
+        resizeObserver.observe(timeline);
+      }
+
+      window.addEventListener("resize", () => {
+        if (!isGameRunning) return;
+        syncGameBackgroundToCountdown();
+        if (!resizeObserver) resizeGameCanvas();
+      });
+
+      if (document.fonts?.ready) {
+        document.fonts.ready.then(() => {
+          if (isGameRunning) syncGameBackgroundToCountdown();
         });
       }
 
