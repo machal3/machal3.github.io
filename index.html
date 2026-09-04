@@ -1,222 +1,359 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="pl">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Odliczanie</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,300;6..72,400&family=Space+Grotesk:wght@400;500&display=swap" rel="stylesheet">
-<style>
-*{box-sizing:border-box;margin:0;padding:0}
-:root{--bg:#f7f6f2;--ink:#141414;--muted:#787570;--line:#dfdcd5}
-body{min-height:100vh;min-height:100dvh;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:clamp(1.5rem,5vw,4rem) clamp(1.25rem,6vw,3rem);background:var(--bg);color:var(--ink);font-family:Newsreader,Georgia,serif;user-select:none;-webkit-user-select:none}
-main{width:100%;max-width:680px}
-header{margin-bottom:clamp(2rem,4vw,3rem)}
-.meta,.label,.labels,.button,.status{font-family:"Space Grotesk",sans-serif}
-.meta{margin-bottom:1rem;font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
-h1{font-size:clamp(2.4rem,7vw,3.25rem);font-weight:300;line-height:1.05;letter-spacing:-.025em}
-.rule{height:1px;margin-bottom:clamp(2rem,5vw,3.5rem);background:var(--line)}
-.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:clamp(1rem,3.5vw,2.5rem);margin-bottom:clamp(3rem,7vw,4.5rem);transition:.35s ease}
-.unit{display:flex;flex-direction:column}
-.num{font-size:clamp(2.8rem,8.5vw,4.5rem);font-weight:300;line-height:.9;letter-spacing:-.035em;font-variant-numeric:tabular-nums}
-.label{margin-top:.8rem;font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
-.timeline{position:relative;padding-top:2rem;z-index:3}
-.track{position:relative;height:1px;background:var(--line)}
-.fill{position:absolute;top:0;left:0;width:0;height:1px;background:var(--ink);transition:width .15s ease}
-.marker{position:absolute;top:50%;left:0;transform:translate(-50%,-50%);transition:left .15s ease}
-.dot{width:7px;height:7px;border:1.5px solid var(--ink);border-radius:50%;background:var(--bg)}
-.percent{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);font: .68rem "Space Grotesk";letter-spacing:.08em;white-space:nowrap}
-.ticks,.labels{display:flex;justify-content:space-between}
-.ticks{margin-top:6px}.tick{width:1px;height:4px;background:var(--line)}.tick.major{height:7px;background:var(--muted)}
-.labels{margin-top:.75rem;font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
-.controls{display:flex;justify-content:flex-end;margin-top:1.7rem}
-.button{min-height:44px;display:flex;align-items:center;gap:.7rem;padding:.72rem 1.05rem;border:1px solid var(--line);border-radius:999px;background:transparent;color:var(--ink);font-size:.68rem;font-weight:500;letter-spacing:.12em;text-transform:uppercase;cursor:pointer;transition:.18s ease}
-.button:hover,.button:focus-visible,body.playing .button{background:var(--ink);border-color:var(--ink);color:var(--bg)}
-.icon{width:1.25rem;height:1.25rem;position:relative;border:1px solid currentColor;border-radius:50%}
-.icon:after{content:"";position:absolute;top:50%;left:53%;transform:translate(-50%,-50%);border-top:3px solid transparent;border-bottom:3px solid transparent;border-left:5px solid currentColor}
-.ball{position:fixed;top:0;left:0;z-index:2;display:none;width:12px;height:12px;border-radius:50%;background:var(--ink);box-shadow:0 0 0 3px #14141412,0 6px 18px #14141424;pointer-events:none;will-change:transform}
-.status{position:fixed;z-index:5;display:none;min-width:80px;padding:1rem 1.25rem;border:1px solid var(--line);background:#f7f6f2ee;text-align:center;font-size:.72rem;line-height:1.6;letter-spacing:.08em;text-transform:uppercase;transform:translate(-50%,-50%);cursor:pointer}
-body.playing{touch-action:none}body.playing .grid{opacity:.28;filter:blur(.35px)}body.playing .ball{display:block}body.playing .marker{display:none}
-body.playing .fill{top:-2px;width:104px;height:5px;border-radius:99px;transition:none;box-shadow:0 3px 12px #14141424}
-@media(max-width:560px){.grid{grid-template-columns:repeat(2,1fr)}.unit{padding-bottom:.75rem;border-bottom:1px solid #0000000a}body.playing .fill{width:82px}}
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Odliczanie</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;1,6..72,300&family=Space+Grotesk:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg: #f7f6f2;
+      --text-main: #141414;
+      --text-muted: #787570;
+      --border-line: #dfdcd5;
+    }
+
+    body {
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: var(--bg);
+      color: var(--text-main);
+      padding: clamp(1.5rem, 5vw, 4rem) clamp(1.25rem, 6vw, 3rem);
+      padding-top: max(clamp(1.5rem, 5vw, 4rem), env(safe-area-inset-top));
+      padding-bottom: max(clamp(1.5rem, 5vw, 4rem), env(safe-area-inset-bottom));
+      padding-left: max(clamp(1.25rem, 6vw, 3rem), env(safe-area-inset-left));
+      padding-right: max(clamp(1.25rem, 6vw, 3rem), env(safe-area-inset-right));
+      font-family: "Newsreader", Garamond, Georgia, serif;
+      -webkit-font-smoothing: antialiased;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    main {
+      width: 100%;
+      max-width: 680px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      margin-bottom: clamp(2rem, 4vw, 3rem);
+    }
+
+    .meta {
+      font-family: "Space Grotesk", sans-serif;
+      font-size: clamp(0.68rem, 1.8vw, 0.75rem);
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: clamp(0.75rem, 2vw, 1.25rem);
+    }
+
+    h1 {
+      font-size: clamp(2.4rem, 7vw, 3.25rem);
+      font-weight: 300;
+      line-height: 1.05;
+      letter-spacing: -0.025em;
+      color: var(--text-main);
+    }
+
+    .rule {
+      width: 100%;
+      height: 1px;
+      background: var(--border-line);
+      margin-bottom: clamp(2rem, 5vw, 3.5rem);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      column-gap: clamp(1rem, 3.5vw, 2.5rem);
+      row-gap: clamp(1.75rem, 4vw, 2.5rem);
+      margin-bottom: clamp(3rem, 7vw, 4.5rem);
+    }
+
+    .unit {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .num {
+      font-family: "Newsreader", serif;
+      font-size: clamp(2.8rem, 8.5vw, 4.5rem);
+      font-weight: 300;
+      line-height: 0.9;
+      letter-spacing: -0.035em;
+      font-variant-numeric: tabular-nums;
+      color: var(--text-main);
+    }
+
+    .label {
+      font-family: "Space Grotesk", sans-serif;
+      font-size: clamp(0.62rem, 1.6vw, 0.7rem);
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-top: clamp(0.6rem, 1.5vw, 1rem);
+    }
+
+    .timeline-container {
+      position: relative;
+      width: 100%;
+      padding-top: 2rem;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .timeline-track {
+      position: relative;
+      width: 100%;
+      height: 1px;
+      background: var(--border-line);
+    }
+
+    .timeline-fill {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 1px;
+      background: var(--text-main);
+      width: 0%;
+      transition: width 0.15s ease-out;
+    }
+
+    .timeline-marker {
+      position: absolute;
+      top: 50%;
+      left: 0%;
+      transform: translate(-50%, -50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transition: left 0.15s ease-out;
+      pointer-events: none;
+    }
+
+    .marker-dot {
+      width: 7px;
+      height: 7px;
+      background: var(--bg);
+      border: 1.5px solid var(--text-main);
+      border-radius: 50%;
+    }
+
+    .marker-value {
+      position: absolute;
+      bottom: 12px;
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 0.68rem;
+      letter-spacing: 0.08em;
+      color: var(--text-main);
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .timeline-ticks {
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+      margin-top: 6px;
+    }
+
+    .tick {
+      width: 1px;
+      height: 4px;
+      background: var(--border-line);
+    }
+
+    .tick.major {
+      height: 7px;
+      background: var(--text-muted);
+    }
+
+    .timeline-labels {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 0.75rem;
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 0.68rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    .finished {
+      display: none;
+      font-size: clamp(1.4rem, 4vw, 1.75rem);
+      font-style: italic;
+      color: var(--text-main);
+      margin-bottom: 2.5rem;
+    }
+
+    @media (max-width: 560px) {
+      .grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      
+      .unit {
+        border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+        padding-bottom: 0.75rem;
+      }
+    }
+  </style>
 </head>
 <body>
-<main>
-  <header><div class="meta">14 września 2026 — 18:00 CEST</div><h1>Odliczanie</h1></header>
-  <div class="rule" id="ceiling"></div>
+  <main>
+    <header>
+      <div class="meta">14 września 2026 — 18:00 CEST</div>
+      <h1>Odliczanie</h1>
+    </header>
 
-  <div class="grid" id="timer">
-    <div class="unit"><span class="num" id="days">00</span><span class="label">Dni</span></div>
-    <div class="unit"><span class="num" id="hours">00</span><span class="label">Godzin</span></div>
-    <div class="unit"><span class="num" id="mins">00</span><span class="label">Minut</span></div>
-    <div class="unit"><span class="num" id="secs">00</span><span class="label">Sekund</span></div>
-  </div>
+    <div class="rule"></div>
 
-  <div class="timeline">
-    <div class="track" id="track">
-      <div class="fill" id="paddle"></div>
-      <div class="marker" id="marker"><span class="percent" id="percent">0.0%</span><span class="dot"></span></div>
+    <div class="grid" id="timer">
+      <div class="unit">
+        <span class="num" id="days">00</span>
+        <span class="label">Dni</span>
+      </div>
+      <div class="unit">
+        <span class="num" id="hours">00</span>
+        <span class="label">Godzin</span>
+      </div>
+      <div class="unit">
+        <span class="num" id="minutes">00</span>
+        <span class="label">Minut</span>
+      </div>
+      <div class="unit">
+        <span class="num" id="seconds">00</span>
+        <span class="label">Sekund</span>
+      </div>
     </div>
-    <div class="ticks"><i class="tick major"></i><i class="tick"></i><i class="tick"></i><i class="tick"></i><i class="tick major"></i><i class="tick"></i><i class="tick"></i><i class="tick"></i><i class="tick major"></i></div>
-    <div class="labels"><span>21.08</span><span id="score">14.09</span></div>
-  </div>
 
-  <div class="controls"><button class="button" id="play"><span class="icon"></span><span id="buttonText">Zagraj</span></button></div>
-</main>
+    <div class="finished" id="finished-message">Czas dobiegł końca.</div>
 
-<div class="ball" id="ball"></div>
-<button class="status" id="status"></button>
+    <div class="timeline-container" id="timeline">
+      <div class="timeline-track">
+        <div class="timeline-fill" id="timeline-fill"></div>
+        <div class="timeline-marker" id="timeline-marker">
+          <span class="marker-value" id="percent-label">0.0%</span>
+          <div class="marker-dot"></div>
+        </div>
+      </div>
 
-<script>
-const start=new Date("2026-08-21T00:00:00+02:00").getTime();
-const target=new Date("2026-09-14T18:00:00+02:00").getTime();
-const $=id=>document.getElementById(id);
-const pad=n=>String(n).padStart(2,"0");
-const days=$("days"),hours=$("hours"),mins=$("mins"),secs=$("secs");
-const track=$("track"),paddle=$("paddle"),marker=$("marker"),percent=$("percent");
-const ball=$("ball"),status=$("status"),score=$("score"),play=$("play"),buttonText=$("buttonText");
+      <div class="timeline-ticks">
+        <div class="tick major"></div>
+        <div class="tick"></div>
+        <div class="tick"></div>
+        <div class="tick"></div>
+        <div class="tick major"></div>
+        <div class="tick"></div>
+        <div class="tick"></div>
+        <div class="tick"></div>
+        <div class="tick major"></div>
+      </div>
 
-function countdown(){
-  const d=target-Date.now(), total=target-start;
-  const p=Math.max(0,Math.min(100,(Date.now()-start)/total*100));
-  if(!game.active){paddle.style.width=p+"%";paddle.style.left="0";marker.style.left=p+"%";percent.textContent=p.toFixed(1)+"%"}
-  if(d<=0)return;
-  days.textContent=pad(Math.floor(d/86400000));
-  hours.textContent=pad(Math.floor(d%86400000/3600000));
-  mins.textContent=pad(Math.floor(d%3600000/60000));
-  secs.textContent=pad(Math.floor(d%60000/1000));
-}
-countdown();setInterval(countdown,250);
+      <div class="timeline-labels">
+        <span>21.08</span>
+        <span>14.09</span>
+      </div>
+    </div>
+  </main>
 
-const game={active:false,over:false,serving:false,x:0,y:0,vx:0,vy:0,r:6,px:0,targetX:0,pw:104,score:0,last:0,serveEnd:0,frame:0};
+  <script>
+    const startDate = new Date("2026-08-21T00:00:00+02:00").getTime();
+    const targetDate = new Date("2026-09-14T18:00:00+02:00").getTime();
+    const totalDuration = targetDate - startDate;
 
-function bounds(){
-  const main=document.querySelector("main").getBoundingClientRect();
-  const top=$("ceiling").getBoundingClientRect().bottom+10;
-  const t=track.getBoundingClientRect();
-  return {left:main.left,right:main.right,top,bottom:t.top,trackLeft:t.left,w:t.width};
-}
+    const daysEl = document.getElementById("days");
+    const hoursEl = document.getElementById("hours");
+    const minutesEl = document.getElementById("minutes");
+    const secondsEl = document.getElementById("seconds");
+    const timerGrid = document.getElementById("timer");
+    const finishedMsg = document.getElementById("finished-message");
+    const timelineFill = document.getElementById("timeline-fill");
+    const timelineMarker = document.getElementById("timeline-marker");
+    const percentLabel = document.getElementById("percent-label");
+    const timeline = document.getElementById("timeline");
 
-function placeStatus(text){
-  const b=bounds();
-  status.textContent=text;
-  status.style.left=(b.left+b.right)/2+"px";
-  status.style.top=(b.top+b.bottom)/2+"px";
-  status.style.display="block";
-}
+    let isWarping = false;
+    let simulatedOffset = 0;
 
-function resetBall(){
-  const b=bounds();
-  game.pw=paddle.getBoundingClientRect().width||104;
-  game.px=game.targetX=(b.w-game.pw)/2;
-  game.x=(b.left+b.right)/2;
-  game.y=Math.max(b.top+28,b.bottom-Math.max(58,Math.min(92,(b.bottom-b.top)*.26)));
-  game.vx=(Math.random()<.5?-1:1)*175;
-  game.vy=-235;
-  paddle.style.left=game.px+"px";
-  ball.style.transform=`translate3d(${game.x-game.r}px,${game.y-game.r}px,0)`;
-}
-
-function startGame(){
-  cancelAnimationFrame(game.frame);
-  game.active=true;game.over=false;game.serving=true;game.score=0;game.last=0;
-  game.serveEnd=performance.now()+1800;
-  document.body.classList.add("playing");
-  ball.style.display="";
-  score.textContent="WYNIK 00";
-  buttonText.textContent="Zakończ grę";
-  resetBall();placeStatus("3");
-  status.disabled=true;
-  if(navigator.vibrate)navigator.vibrate([25,35,25]);
-  game.frame=requestAnimationFrame(loop);
-}
-
-function stopGame(){
-  cancelAnimationFrame(game.frame);
-  game.active=false;game.over=false;game.serving=false;
-  document.body.classList.remove("playing");
-  ball.style.display="";status.style.display="none";
-  score.textContent="14.09";buttonText.textContent="Zagraj";
-  countdown();
-}
-
-function lose(){
-  game.over=true;ball.style.display="none";
-  buttonText.textContent="Zagraj ponownie";
-  placeStatus("Koniec gry · wynik "+game.score+" — dotknij, aby spróbować ponownie");
-  status.disabled=false;
-  if(navigator.vibrate)navigator.vibrate([70,50,110]);
-}
-
-function loop(t){
-  if(!game.active||game.over)return;
-
-  if(game.serving){
-    const left=game.serveEnd-t;
-    if(left>0){placeStatus(String(Math.max(1,Math.ceil(left/600)));game.frame=requestAnimationFrame(loop);return}
-    game.serving=false;status.style.display="none";game.last=t;
-  }
-
-  const dt=Math.min(.032,(t-game.last)/1000||0);
-  game.last=t;
-  const b=bounds();
-
-  const ease=1-Math.exp(-22*dt);
-  const oldX=game.px;
-  game.px+=(game.targetX-game.px)*ease;
-  const paddleV=dt?(game.px-oldX)/dt:0;
-  paddle.style.left=game.px+"px";
-
-  const steps=Math.max(1,Math.ceil(dt/.008));
-  for(let i=0;i<steps;i++){
-    const s=dt/steps;
-    game.x+=game.vx*s;game.y+=game.vy*s;
-
-    if(game.x-game.r<=b.left){game.x=b.left+game.r;game.vx=Math.abs(game.vx)}
-    if(game.x+game.r>=b.right){game.x=b.right-game.r;game.vx=-Math.abs(game.vx)}
-    if(game.y-game.r<=b.top){game.y=b.top+game.r;game.vy=Math.abs(game.vy)}
-
-    const left=b.trackLeft+game.px,right=left+game.pw,bottom=game.y+game.r;
-    if(game.vy>0&&bottom>=b.bottom-4&&bottom<=b.bottom+8&&game.x>=left&&game.x<=right){
-      game.y=b.bottom-game.r-4;
-      const hit=(game.x-(left+game.pw/2))/(game.pw/2);
-      const speed=Math.min(540,285+game.score*11);
-      game.vx=Math.max(-speed*.86,Math.min(speed*.86,hit*speed*.82+paddleV*.1));
-      if(Math.abs(game.vx)<48)game.vx=(hit<0?-1:1)*48;
-      game.vy=-Math.sqrt(Math.max(15000,speed*speed-game.vx*game.vx));
-      game.score++;score.textContent="WYNIK "+pad(game.score);
-      paddle.animate([{transform:"scaleY(1)"},{transform:"scaleY(1.9)"},{transform:"scaleY(1)"}],{duration:150,easing:"ease-out"});
-      if(navigator.vibrate)navigator.vibrate(8);
-      break;
+    function startWarp() {
+      isWarping = true;
+      if (navigator.vibrate) navigator.vibrate(25);
     }
-  }
 
-  if(game.y-game.r>b.bottom+18){lose();return}
-  ball.style.transform=`translate3d(${game.x-game.r}px,${game.y-game.r}px,0)`;
-  game.frame=requestAnimationFrame(loop);
-}
+    function stopWarp() {
+      if (!isWarping) return;
+      isWarping = false;
+      simulatedOffset = 0;
+    }
 
-window.addEventListener("pointermove",e=>{
-  if(!game.active||game.over)return;
-  const b=bounds();
-  game.pw=paddle.getBoundingClientRect().width||game.pw;
-  game.targetX=Math.max(0,Math.min(e.clientX-b.trackLeft-game.pw/2,b.w-game.pw));
-},{passive:true});
+    timeline.addEventListener("touchstart", startWarp, { passive: true });
+    window.addEventListener("touchend", stopWarp);
+    window.addEventListener("touchcancel", stopWarp);
+    timeline.addEventListener("mousedown", startWarp);
+    window.addEventListener("mouseup", stopWarp);
 
-window.addEventListener("keydown",e=>{
-  if(!game.active)return;
-  if(e.key==="Escape")stopGame();
-  if(e.key==="ArrowLeft"||e.key==="ArrowRight"){
-    e.preventDefault();
-    const b=bounds(),dir=e.key==="ArrowLeft"?-1:1;
-    game.targetX=Math.max(0,Math.min(game.targetX+dir*34,b.w-game.pw));
-  }
-});
+    function pad(num) {
+      return String(num).padStart(2, "0");
+    }
 
-play.addEventListener("click",()=>!game.active||game.over?startGame():stopGame());
-status.addEventListener("click",()=>{if(game.over)startGame()});
-</script>
+    function updateCountdown() {
+      if (isWarping) {
+        simulatedOffset += 1000 * 60 * 60 * 3;
+        if (navigator.vibrate && Math.random() > 0.75) navigator.vibrate(10);
+      }
+
+      const now = new Date().getTime() + simulatedOffset;
+      const difference = targetDate - now;
+
+      const elapsed = Math.max(0, Math.min(now - startDate, totalDuration));
+      const ratio = elapsed / totalDuration;
+      const percentage = Math.min(100, ratio * 100);
+      
+      timelineFill.style.width = percentage.toFixed(2) + "%";
+      timelineMarker.style.left = percentage.toFixed(2) + "%";
+      percentLabel.textContent = isWarping ? "WARP " + percentage.toFixed(1) + "%" : percentage.toFixed(1) + "%";
+
+      if (difference <= 0) {
+        timerGrid.style.display = "none";
+        finishedMsg.style.display = "block";
+        timelineFill.style.width = "100%";
+        timelineMarker.style.left = "100%";
+        percentLabel.textContent = "100%";
+        return;
+      } else {
+        timerGrid.style.display = "grid";
+        finishedMsg.style.display = "none";
+      }
+
+      const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((difference % (1000 * 60)) / 1000);
+
+      daysEl.textContent = pad(days);
+      hoursEl.textContent = pad(hours);
+      minutesEl.textContent = pad(minutes);
+      secondsEl.textContent = pad(seconds);
+    }
+
+    updateCountdown();
+    setInterval(updateCountdown, 50);
+  </script>
 </body>
 </html>
