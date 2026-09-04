@@ -19,6 +19,7 @@
       --text-main: #141414;
       --text-muted: #787570;
       --border-line: #dfdcd5;
+      --border-light: #ece9e2;
     }
 
     body {
@@ -36,8 +37,6 @@
       padding-right: max(clamp(1.25rem, 6vw, 3rem), env(safe-area-inset-right));
       font-family: "Newsreader", Garamond, Georgia, serif;
       -webkit-font-smoothing: antialiased;
-      user-select: none;
-      -webkit-user-select: none;
     }
 
     main {
@@ -108,12 +107,11 @@
       margin-top: clamp(0.6rem, 1.5vw, 1rem);
     }
 
+    /* Oś czasu i wskaźnik drogi */
     .timeline-container {
       position: relative;
       width: 100%;
       padding-top: 2rem;
-      cursor: pointer;
-      -webkit-tap-highlight-color: transparent;
     }
 
     .timeline-track {
@@ -130,9 +128,10 @@
       height: 1px;
       background: var(--text-main);
       width: 0%;
-      transition: width 0.15s ease-out;
+      transition: width 0.3s ease-out;
     }
 
+    /* Ruchomy marker ze wskaźnikiem */
     .timeline-marker {
       position: absolute;
       top: 50%;
@@ -141,7 +140,7 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      transition: left 0.15s ease-out;
+      transition: left 0.3s ease-out;
       pointer-events: none;
     }
 
@@ -164,11 +163,13 @@
       font-variant-numeric: tabular-nums;
     }
 
+    /* Podziałka i daty graniczne */
     .timeline-ticks {
       display: flex;
       justify-content: space-between;
       width: 100%;
       margin-top: 6px;
+      user-select: none;
     }
 
     .tick {
@@ -244,7 +245,7 @@
 
     <div class="finished" id="finished-message">Czas dobiegł końca.</div>
 
-    <div class="timeline-container" id="timeline">
+    <div class="timeline-container">
       <div class="timeline-track">
         <div class="timeline-fill" id="timeline-fill"></div>
         <div class="timeline-marker" id="timeline-marker">
@@ -286,59 +287,31 @@
     const timelineFill = document.getElementById("timeline-fill");
     const timelineMarker = document.getElementById("timeline-marker");
     const percentLabel = document.getElementById("percent-label");
-    const timeline = document.getElementById("timeline");
-
-    let isWarping = false;
-    let simulatedOffset = 0;
-
-    function startWarp() {
-      isWarping = true;
-      if (navigator.vibrate) navigator.vibrate(25);
-    }
-
-    function stopWarp() {
-      if (!isWarping) return;
-      isWarping = false;
-      simulatedOffset = 0;
-    }
-
-    timeline.addEventListener("touchstart", startWarp, { passive: true });
-    window.addEventListener("touchend", stopWarp);
-    window.addEventListener("touchcancel", stopWarp);
-    timeline.addEventListener("mousedown", startWarp);
-    window.addEventListener("mouseup", stopWarp);
 
     function pad(num) {
       return String(num).padStart(2, "0");
     }
 
     function updateCountdown() {
-      if (isWarping) {
-        simulatedOffset += 1000 * 60 * 60 * 3;
-        if (navigator.vibrate && Math.random() > 0.75) navigator.vibrate(10);
-      }
-
-      const now = new Date().getTime() + simulatedOffset;
+      const now = new Date().getTime();
       const difference = targetDate - now;
 
       const elapsed = Math.max(0, Math.min(now - startDate, totalDuration));
       const ratio = elapsed / totalDuration;
-      const percentage = Math.min(100, ratio * 100);
+      const percentage = ratio * 100;
       
       timelineFill.style.width = percentage.toFixed(2) + "%";
       timelineMarker.style.left = percentage.toFixed(2) + "%";
-      percentLabel.textContent = isWarping ? "WARP " + percentage.toFixed(1) + "%" : percentage.toFixed(1) + "%";
+      percentLabel.textContent = percentage.toFixed(1) + "%";
 
       if (difference <= 0) {
+        clearInterval(interval);
         timerGrid.style.display = "none";
         finishedMsg.style.display = "block";
         timelineFill.style.width = "100%";
         timelineMarker.style.left = "100%";
         percentLabel.textContent = "100%";
         return;
-      } else {
-        timerGrid.style.display = "grid";
-        finishedMsg.style.display = "none";
       }
 
       const days = Math.floor(difference / (1000 * 60 * 60 * 24));
@@ -353,7 +326,7 @@
     }
 
     updateCountdown();
-    setInterval(updateCountdown, 50);
+    const interval = setInterval(updateCountdown, 1000);
   </script>
 </body>
 </html>
