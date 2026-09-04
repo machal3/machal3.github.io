@@ -474,47 +474,6 @@
       opacity: 0;
     }
 
-    .game-over-panel {
-      position: absolute;
-      z-index: 4;
-      top: 42%;
-      left: 50%;
-      width: min(88%, 420px);
-      padding: 1.4rem;
-      border: 1px solid rgba(223, 220, 213, 0.9);
-      border-radius: 18px;
-      background: rgba(247, 246, 242, 0.92);
-      text-align: center;
-      -webkit-backdrop-filter: blur(12px);
-      backdrop-filter: blur(12px);
-      transform: translate(-50%, -50%);
-    }
-
-    .game-over-panel h2 {
-      margin-bottom: 0.5rem;
-      font-size: clamp(1.8rem, 5.5vw, 2.4rem);
-      font-weight: 300;
-    }
-
-    .game-over-panel p {
-      margin-bottom: 0.45rem;
-      color: var(--text-muted);
-      font-family: var(--font-sans);
-      font-size: 0.72rem;
-      letter-spacing: 0.1em;
-      line-height: 1.5;
-      text-transform: uppercase;
-    }
-
-    .game-over-panel .rewind-status {
-      margin-bottom: 1.1rem;
-      font-size: 0.64rem;
-    }
-
-    .btn-restart {
-      padding: 0.55rem 1.15rem;
-    }
-
     @media (max-width: 560px) {
       header {
         flex-direction: column;
@@ -740,14 +699,7 @@
         aria-label="Plansza gry. Przesuwaj palcem, kursorem albo strzałkami, aby odbijać piłkę."
       >Twoja przeglądarka nie obsługuje elementu canvas.</canvas>
 
-      <div class="game-hints" id="game-hints" aria-hidden="true">Przesuń palcem, kursorem lub strzałkami</div>
-
-      <div class="game-over-panel" id="game-over-panel" role="status" hidden>
-        <h2 id="game-over-title">Koniec gry</h2>
-        <p id="game-over-score">Wynik: 0 — rekord: 0</p>
-        <p class="rewind-status">Czas wraca do normy…</p>
-        <button class="btn-restart" id="btn-restart-game" type="button">Zagraj ponownie</button>
-      </div>
+      <div class="game-hints" id="game-hints" role="status" aria-live="polite">Przesuń palcem, kursorem lub strzałkami</div>
     </div>
   </section>
 
@@ -813,14 +765,10 @@
       const ctx = canvas.getContext("2d", { alpha: true });
       const btnStartGame = document.getElementById("btn-start-game");
       const btnExitGame = document.getElementById("btn-exit-game");
-      const btnRestartGame = document.getElementById("btn-restart-game");
       const currentScoreEl = document.getElementById("current-score");
       const bestScoreEl = document.getElementById("best-score");
       const warpSummaryEl = document.getElementById("warp-summary");
       const gameHints = document.getElementById("game-hints");
-      const gameOverPanel = document.getElementById("game-over-panel");
-      const gameOverTitle = document.getElementById("game-over-title");
-      const gameOverScore = document.getElementById("game-over-score");
       const rootStyles = getComputedStyle(document.documentElement);
       const canvasSansFont = rootStyles.getPropertyValue("--font-sans").trim();
       const canvasSerifFont = rootStyles.getPropertyValue("--font-serif").trim();
@@ -1312,7 +1260,6 @@
         setText(currentScoreEl, "0");
         setText(bestScoreEl, String(highScore));
         updateWarpSummary();
-        gameOverPanel.hidden = true;
         setText(gameHints, "Przesuń palcem, kursorem lub strzałkami");
         hideGameHintSoon();
 
@@ -1392,27 +1339,16 @@
 
         gameState = "over";
         gameHints.classList.remove("is-hidden");
-        setText(gameHints, "Możesz spróbować ponownie");
+        setText(gameHints, "Dotknij planszy lub naciśnij Enter, aby zagrać ponownie");
         window.clearTimeout(hintHideTimeoutId);
-
-        if (isNewRecordAchieved && score > 0) {
-          setText(gameOverTitle, "Nowy rekord!");
-          setText(gameOverScore, `Twój najlepszy wynik: ${score} pkt`);
-        } else {
-          setText(gameOverTitle, "Koniec gry");
-          setText(gameOverScore, `Wynik: ${score} — rekord: ${highScore}`);
-        }
-
-        gameOverPanel.hidden = false;
         triggerTimeRewind();
         createSparks(ball.x, height - 12, 14);
         vibrate([40, 60, 40]);
-        btnRestartGame.focus({ preventScroll: true });
+        canvas.focus({ preventScroll: true });
       }
 
       btnStartGame.addEventListener("click", startGame);
       btnExitGame.addEventListener("click", exitGame);
-      btnRestartGame.addEventListener("click", restartGame);
 
       function setPaddleFromClientX(clientX, immediate = false) {
         const rect = canvas.getBoundingClientRect();
@@ -1425,13 +1361,15 @@
       canvas.addEventListener("pointerdown", (event) => {
         event.preventDefault();
 
+        activePointerId = event.pointerId;
+        canvas.setPointerCapture?.(event.pointerId);
+
         if (gameState === "over") {
           restartGame();
+          setPaddleFromClientX(event.clientX, true);
           return;
         }
 
-        activePointerId = event.pointerId;
-        canvas.setPointerCapture?.(event.pointerId);
         setPaddleFromClientX(event.clientX, event.pointerType === "touch");
       });
 
