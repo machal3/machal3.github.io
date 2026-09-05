@@ -347,6 +347,41 @@
       pointer-events: auto;
     }
 
+    .game-menu {
+      margin: auto;
+      width: min(92vw, 580px);
+      max-height: 88vh;
+      max-height: 88dvh;
+      overflow-y: auto;
+      padding: clamp(1.25rem, 4vw, 2.25rem);
+      border: 1px solid var(--border-line);
+      border-radius: 12px;
+      background: var(--bg);
+      color: var(--text-main);
+    }
+    .game-menu::backdrop { background: rgba(8, 13, 22, 0.72); }
+    .menu-heading { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1.5rem; }
+    .menu-heading h2 { font-size: 2rem; font-weight: 300; }
+    .game-choice {
+      width: 100%; display: block; text-align: left;
+      padding: 1.25rem; margin-top: 0.75rem;
+      background: transparent; color: var(--text-main);
+      border: 1px solid var(--border-line); border-radius: 6px;
+      cursor: pointer; transition: background 0.2s, border-color 0.2s;
+    }
+    .game-choice:hover { background: rgba(var(--mist-rgb), 0.08); border-color: var(--text-muted); }
+    .choice-title { display: block; font: 300 1.75rem var(--font-serif); }
+    .tower-action {
+      position: absolute; z-index: 3; left: 50%; transform: translateX(-50%);
+      bottom: max(0.6rem, env(safe-area-inset-bottom));
+      min-height: 44px; padding: 0.6rem 1.4rem;
+      border: 1px solid var(--text-muted); border-radius: 999px;
+      background: var(--bg); color: var(--text-main);
+      font: 500 0.875rem var(--font-sans); cursor: pointer; white-space: nowrap;
+    }
+    body.in-tower .game-hints { bottom: max(3.8rem, calc(env(safe-area-inset-bottom) + 3.2rem)); }
+    body.in-tower .arena-status { font-size: 0.8rem; }
+
     .game-top-bar {
       position: relative;
       z-index: 1001;
@@ -608,7 +643,7 @@
         id="btn-start-game"
         type="button"
         aria-haspopup="dialog"
-        aria-controls="game-overlay"
+        aria-controls="game-menu"
       >Zagraj</button>
     </header>
 
@@ -672,6 +707,19 @@
       </div>
     </div>
   </main>
+
+  <dialog class="game-menu" id="game-menu" aria-labelledby="menu-title">
+    <div class="menu-heading">
+      <h2 id="menu-title">Wybierz grę</h2>
+      <button class="btn-exit" id="btn-close-menu" type="button">Wróć</button>
+    </div>
+    <button class="game-choice" id="choose-ball" type="button">
+      <span class="choice-title">Odbicia</span>
+    </button>
+    <button class="game-choice" id="choose-tower" type="button">
+      <span class="choice-title">Wieża</span>
+    </button>
+  </dialog>
 
   <section
     class="game-fullscreen-overlay"
@@ -749,6 +797,7 @@
       >Twoja przeglądarka nie obsługuje elementu canvas.</canvas>
 
       <div class="game-hints" id="game-hints" role="status" aria-live="polite">Przesuń palcem, kursorem lub strzałkami</div>
+      <button class="tower-action" id="tower-action" type="button" hidden>Ułóż warstwę</button>
     </div>
   </section>
 
@@ -853,6 +902,8 @@
       const ctx = canvas.getContext("2d", { alpha: true });
       const btnStartGame = document.getElementById("btn-start-game");
       const btnExitGame = document.getElementById("btn-exit-game");
+      const gameMenu = document.getElementById("game-menu");
+      const towerAction = document.getElementById("tower-action");
       const currentScoreEl = document.getElementById("current-score");
       const bestScoreEl = document.getElementById("best-score");
       const warpSummaryEl = document.getElementById("warp-summary");
@@ -862,6 +913,7 @@
       const canvasSerifFont = rootStyles.getPropertyValue("--font-serif").trim();
 
       let previousFocus = null;
+      let activeGame = "ball";
       let isGameRunning = false;
       let isRewinding = false;
       let targetTimeOffset = 0;
@@ -912,9 +964,9 @@
         return minutes > 0 ? `${hours} godz. ${minutes} min` : `${hours} godz.`;
       }
 
-      function readHighScore() {
+      function readHighScore(mode = "ball") {
         try {
-          const stored = Number.parseInt(localStorage.getItem("countdown_ball_highscore") || "0", 10);
+          const stored = Number.parseInt(localStorage.getItem(`countdown_${mode}_highscore`) || "0", 10);
           return Number.isFinite(stored) && stored >= 0 ? stored : 0;
         } catch (_error) {
           return 0;
@@ -923,7 +975,7 @@
 
       function saveHighScore(value) {
         try {
-          localStorage.setItem("countdown_ball_highscore", String(value));
+          localStorage.setItem(`countdown_${activeGame}_highscore`, String(value));
         } catch (_error) {
           // Rekord nadal działa do końca bieżącej sesji.
         }
@@ -1132,6 +1184,12 @@
       let dpr = 1;
       let activePointerId = null;
       const pressedKeys = new Set();
+      const sessionRecords = { ball: highScore, tower: readHighScore("tower") };
+      const tower = {
+        layers: [], moving: null, streak: 0, rescue: 1,
+        cooldown: 0, camera: 0, cuts: [], message: "", messageUntil: 0,
+        currentSpeed: 0, travel: 0
+      };
 
       setText(bestScoreEl, String(highScore));
 
@@ -1215,6 +1273,201 @@
         trailHead = 0;
         trailCount = 0;
         trailSampleAccumulator = 0;
+      }
+
+      /* ================= WIEŻA CISZY =================
+         Pozycje poziome są względne (0–1). Zmiana orientacji nie zmienia
+         okna trafienia, prędkości względnej ani szerokości zbudowanej wieży. */
+      function nextTowerLayer() {
+        const top = tower.layers[tower.layers.length - 1];
+        const fromLeft = score % 2 === 0;
+        tower.moving = {
+          x: fromLeft ? 0 : 1 - top.w,
+          w: top.w,
+          direction: fromLeft ? 1 : -1,
+          tempoPhase: (score * 2.399963) % (Math.PI * 2)
+        };
+        tower.travel = 0;
+      }
+
+      function resetTower() {
+        tower.layers = [{x: 0.18, w: 0.64, level: 0}];
+        tower.streak = 0;
+        tower.rescue = 1;
+        tower.camera = 0;
+        tower.fade = 1;
+        tower.cuts = [];
+        tower.cooldown = gameTime + 650;
+        tower.currentSpeed = 0;
+        tower.travel = 0;
+        tower.message = "Zatrzymaj warstwę dokładnie nad poprzednią";
+        tower.messageUntil = gameTime + 6000;
+        nextTowerLayer();
+        setText(towerAction, "Ułóż warstwę");
+        setText(gameHints, "Dotknij planszy lub przycisku · spacja / Enter");
+        window.clearTimeout(hintHideTimeoutId);
+        gameHints.classList.remove("is-hidden");
+        updateTowerStatus();
+      }
+
+      function towerMetrics() {
+        const span = Math.min(width * 0.94, 560);
+        const step = clamp(height * 0.052, 12, 30);
+        const floor = Math.max(72, height - 104);
+        const visibleRise = Math.max(step, floor - Math.max(48, height * 0.35));
+        return {span, left: (width - span) / 2, step, floor, cameraTarget: Math.max(0, score + 1 - visibleRise / step)};
+      }
+
+      function updateTowerStatus() {
+        const overtime = Date.now() + currentTimeOffset >= targetDate ? " · dogrywka" : "";
+        const tempo = score < 10 ? "spokojne tempo"
+          : score < 22 ? "szybsze tempo"
+          : score < 42 ? "zmienne tempo"
+          : "gwałtowne tempo";
+        const status = gameTime < tower.messageUntil ? tower.message
+          : `Warstwa ${score + 1} · ${tempo} · seria ${tower.streak} · ratunek ${tower.rescue}/1${overtime}`;
+        setText(arenaStatus, status);
+      }
+
+      function placeTowerLayer() {
+        if (activeGame !== "tower" || !isGameRunning || gameState !== "playing" || gameTime < tower.cooldown) return;
+        const top = tower.layers[tower.layers.length - 1];
+        const moving = tower.moving;
+        const delta = moving.x - top.x;
+        const precisionDifficulty = 1 - Math.exp(-score / 34);
+        // The ideal zone tightens gradually, but retains a usable minimum on phones.
+        const perfectTolerance = Math.max(0.006, top.w * (0.042 - precisionDifficulty * 0.020));
+        const perfect = Math.abs(delta) <= perfectTolerance;
+        let x = perfect ? top.x : Math.max(moving.x, top.x);
+        let w = perfect ? top.w : Math.min(moving.x + moving.w, top.x + top.w) - x;
+
+        if (w < 0.065) {
+          if (tower.rescue > 0) {
+            tower.rescue = 0;
+            tower.streak = 0;
+            tower.cooldown = gameTime + 600;
+            tower.message = "Ratunek wykorzystany · spróbuj ponownie";
+            tower.messageUntil = gameTime + 2400;
+            nextTowerLayer();
+            updateTowerStatus();
+            vibrate(20);
+          } else endGame();
+          return;
+        }
+
+        if (!perfect && !reducedMotionQuery.matches) {
+          tower.cuts.push({
+            x: delta > 0 ? x + w : moving.x,
+            w: moving.w - w, level: score + 1, age: 0, direction: Math.sign(delta)
+          });
+        }
+        tower.streak = perfect ? tower.streak + 1 : 0;
+        const seriesBonus = perfect && tower.streak % 3 === 0;
+        const reward = seriesBonus ? 60 : perfect ? 30 : 15;
+        if (seriesBonus) {
+          const newWidth = Math.min(0.64, w + 0.075);
+          x = clamp(x - (newWidth - w) / 2, 0, 1 - newWidth);
+          w = newWidth;
+        }
+        score += 1;
+        // A checkpoint still rewards a long run, but no longer erases every mistake.
+        const checkpoint = score % 15 === 0;
+        if (checkpoint) {
+          const newWidth = Math.min(0.64, w + 0.045);
+          x = clamp(x - (newWidth - w) / 2, 0, 1 - newWidth);
+          w = newWidth;
+          tower.rescue = 1;
+        }
+        tower.layers.push({x, w, level: score});
+        if (tower.layers.length > 24) tower.layers.shift();
+        targetTimeOffset += reward * 60000;
+        updateWarpSummary();
+        setText(currentScoreEl, String(score));
+        updateHighScore();
+        const tempoMilestone = score === 10 ? "Tempo rośnie"
+          : score === 22 ? "Tempo zaczyna falować"
+          : score === 42 ? "Gwałtowne tempo"
+          : "";
+        tower.message = tempoMilestone
+          ? `${tempoMilestone} · −${reward} min`
+          : `${seriesBonus ? "Idealna trójka!" : perfect ? "Idealnie" : "Dobrze"} · −${reward} min${checkpoint ? " · odzyskany ratunek" : seriesBonus ? " · szerzej" : ""}`;
+        tower.messageUntil = gameTime + 1800;
+        tower.cooldown = gameTime + 300;
+        nextTowerLayer();
+        updateTowerStatus();
+        if (perfect) vibrate(seriesBonus ? [12, 25, 12] : 10);
+      }
+
+      function stepTower(dt) {
+        const metrics = towerMetrics();
+        if (reducedMotionQuery.matches) tower.camera = metrics.cameraTarget;
+        else tower.camera += (metrics.cameraTarget - tower.camera) * (1 - Math.exp(-10 * dt));
+        for (const cut of tower.cuts) cut.age += dt;
+        tower.cuts = tower.cuts.filter(cut => cut.age < 0.8);
+        if (gameState !== "playing") {
+          tower.fade = Math.max(0, tower.fade - dt * 1.4);
+          return;
+        }
+        updateTowerStatus();
+        if (gameTime < tower.cooldown) return;
+        const moving = tower.moving;
+        const heightDifficulty = 1 - Math.exp(-score / 27);
+        const edge = Math.max(0.0001, 1 - moving.w);
+        const lanePosition = clamp(moving.x / edge, 0, 1);
+        const centerRush = Math.sin(lanePosition * Math.PI) ** 2;
+        const centerVariation = score < 10 ? 1 : 0.86 + centerRush * (0.28 + heightDifficulty * 0.18);
+        const pulseStrength = score < 22 ? 0 : Math.min(0.16, 0.06 + (score - 22) * 0.003);
+        const tempoPulse = 1 + Math.sin(tower.travel * 13 + moving.tempoPhase) * pulseStrength;
+        const speed = (0.19 + 0.29 * heightDifficulty) * centerVariation * tempoPulse;
+        tower.currentSpeed = speed;
+        tower.travel += speed * dt;
+        moving.x += moving.direction * speed * dt;
+        if (moving.x < 0) { moving.x = -moving.x; moving.direction = 1; }
+        if (moving.x > edge) { moving.x = 2 * edge - moving.x; moving.direction = -1; }
+      }
+
+      function drawTower() {
+        if (!tower.layers.length || tower.fade <= 0) return;
+        const {span, left, step, floor} = towerMetrics();
+        const yAt = level => floor - (level - tower.camera) * step;
+        const top = tower.layers[tower.layers.length - 1];
+        const slabHeight = Math.max(5, step - 3);
+        const drawSlab = (slab, y, fill, alpha) => {
+          ctx.globalAlpha = tower.fade * alpha;
+          ctx.fillStyle = fill;
+          ctx.fillRect(left + slab.x * span, y, slab.w * span, slabHeight);
+          ctx.strokeStyle = sceneColor("ink", 0.7);
+          ctx.lineWidth = 0.8;
+          ctx.strokeRect(left + slab.x * span, y, slab.w * span, slabHeight);
+        };
+        for (const slab of tower.layers) {
+          const y = yAt(slab.level);
+          if (y < 30 || y > floor + step) continue;
+          drawSlab(slab, y, sceneColor("mist", 0.20), Math.max(0.16, 0.72 - (score - slab.level) * 0.05));
+        }
+        if (gameState === "playing") {
+          const y = yAt(score + 1);
+          // Quiet alignment guides and a bright edge remain readable in every palette.
+          ctx.globalAlpha = 0.35;
+          ctx.strokeStyle = sceneColor("ink");
+          ctx.setLineDash([2, 4]);
+          ctx.beginPath();
+          for (const x of [top.x, top.x + top.w]) {
+            ctx.moveTo(left + x * span, y - 16);
+            ctx.lineTo(left + x * span, yAt(score) + slabHeight);
+          }
+          ctx.stroke();
+          ctx.setLineDash([]);
+          drawSlab(tower.moving, y, sceneColor("muted", 0.88), 1);
+          ctx.globalAlpha = 0.85;
+          ctx.fillStyle = sceneColor("ink");
+          ctx.fillRect(left + tower.moving.x * span, y, tower.moving.w * span, 1.5);
+        }
+        for (const cut of tower.cuts) {
+          drawSlab({x: cut.x + cut.direction * cut.age * 0.04, w: cut.w},
+            yAt(cut.level) + cut.age * cut.age * 240, sceneColor("muted", 0.4), 1 - cut.age / 0.8);
+        }
+        ctx.globalAlpha = 1;
       }
 
       function resizeGameCanvas() {
@@ -1435,6 +1688,7 @@
         paddle.x = (width - paddle.width) / 2;
         paddle.targetX = paddle.x;
         initBall();
+        if (activeGame === "tower") resetTower();
         updateCountdown(0, true);
       }
 
@@ -1456,15 +1710,23 @@
         }
       }
 
-      function startGame() {
+      function startGame(mode = "ball") {
+        activeGame = mode === "tower" ? "tower" : "ball";
+        highScore = sessionRecords[activeGame];
         const preserveTimeReturn = isRewinding || Math.abs(currentTimeOffset) >= 20;
-        previousFocus = document.activeElement;
+        previousFocus = btnStartGame;
         window.clearTimeout(clockTimeoutId);
         cancelAnimationFrame(rewindAnimationId);
 
         syncGameBackgroundToCountdown();
 
         document.body.classList.add("in-game");
+        document.body.classList.toggle("in-tower", activeGame === "tower");
+        towerAction.hidden = activeGame !== "tower";
+        setText(document.getElementById("game-dialog-title"), activeGame === "tower" ? "Wieża" : "Gra w odbijanie piłki");
+        canvas.setAttribute("aria-label", activeGame === "tower"
+          ? "Wieża. Dotknij planszy albo naciśnij spację, aby zatrzymać warstwę nad poprzednią."
+          : "Plansza gry. Przesuwaj palcem, kursorem albo strzałkami, aby odbijać piłkę.");
         countdownContent.inert = true;
         gameOverlay.setAttribute("aria-hidden", "false");
         isGameRunning = true;
@@ -1475,7 +1737,7 @@
         lastFrameTime = performance.now();
         cancelAnimationFrame(animationId);
         animationId = requestAnimationFrame(gameLoop);
-        btnExitGame.focus({ preventScroll: true });
+        canvas.focus({ preventScroll: true });
       }
 
       function exitGame() {
@@ -1487,6 +1749,7 @@
         window.clearTimeout(hintHideTimeoutId);
         cancelAnimationFrame(animationId);
         document.body.classList.remove("in-game");
+        document.body.classList.remove("in-tower");
         countdownContent.inert = false;
         gameOverlay.setAttribute("aria-hidden", "true");
         triggerTimeRewind();
@@ -1514,14 +1777,32 @@
         setText(arenaStatus, "");
         gameHints.classList.remove("is-hidden");
         setText(gameHints, "Dotknij planszy lub naciśnij Enter, aby zagrać ponownie");
+        if (activeGame === "tower") {
+          tower.cuts.length = 0;
+          setText(towerAction, "Spróbuj ponownie");
+          setText(gameHints, `${score} ${polishPlural(score, "warstwa", "warstwy", "warstw")} · rekord ${highScore}`);
+        }
         window.clearTimeout(hintHideTimeoutId);
         triggerTimeRewind();
-        createSparks(ball.x, height - 12, 14);
+        if (activeGame === "ball") createSparks(ball.x, height - 12, 14);
         vibrate([40, 60, 40]);
         canvas.focus({ preventScroll: true });
       }
 
-      btnStartGame.addEventListener("click", startGame);
+      btnStartGame.addEventListener("click", () => { gameMenu.showModal(); });
+      document.getElementById("btn-close-menu").addEventListener("click", () => gameMenu.close());
+      gameMenu.addEventListener("close", () => { if (!isGameRunning) btnStartGame.focus({ preventScroll: true }); });
+      for (const mode of ["ball", "tower"]) {
+        document.getElementById(`choose-${mode}`).addEventListener("click", () => {
+          gameMenu.close();
+          startGame(mode);
+        });
+      }
+      towerAction.addEventListener("click", () => {
+        if (!isGameRunning || document.hidden) return;
+        if (gameState === "over") restartGame();
+        else placeTowerLayer();
+      });
       btnExitGame.addEventListener("click", exitGame);
 
       function setPaddleFromClientX(clientX, immediate = false) {
@@ -1534,6 +1815,12 @@
 
       canvas.addEventListener("pointerdown", (event) => {
         event.preventDefault();
+        if (!isGameRunning || document.hidden || event.isPrimary === false || (event.button != null && event.button !== 0)) return;
+        if (activeGame === "tower") {
+          if (gameState === "over") restartGame();
+          else placeTowerLayer();
+          return;
+        }
 
         activePointerId = event.pointerId;
         canvas.setPointerCapture?.(event.pointerId);
@@ -1548,6 +1835,7 @@
       });
 
       canvas.addEventListener("pointermove", (event) => {
+        if (!isGameRunning || activeGame !== "ball") return;
         const shouldFollow = event.pointerType === "mouse" || event.pointerId === activePointerId;
         if (shouldFollow) {
           setPaddleFromClientX(event.clientX, event.pointerType === "touch");
@@ -1567,6 +1855,29 @@
         if (event.key === "Escape") {
           event.preventDefault();
           exitGame();
+          return;
+        }
+
+        if (event.key === "Tab") {
+          const order = activeGame === "tower" ? [btnExitGame, canvas, towerAction] : [btnExitGame, canvas];
+          const i = order.indexOf(document.activeElement);
+          event.preventDefault();
+          order[(i + (event.shiftKey ? -1 : 1) + order.length) % order.length].focus({ preventScroll: true });
+          return;
+        }
+        // Buttons retain native Enter/Space activation (no duplicate drop or restart).
+        if (document.activeElement === btnExitGame || document.activeElement === towerAction) {
+          if (event.repeat && (event.key === " " || event.key === "Enter")) event.preventDefault();
+          return;
+        }
+        if (activeGame === "tower") {
+          if (event.key === " " || event.key === "Enter") {
+            event.preventDefault();
+            if (!event.repeat && !document.hidden) {
+              if (gameState === "over") restartGame();
+              else placeTowerLayer();
+            }
+          }
           return;
         }
 
@@ -1590,11 +1901,12 @@
 
         const recordWasAlreadyBeaten = isNewRecordAchieved;
         highScore = score;
+        sessionRecords[activeGame] = highScore;
         isNewRecordAchieved = true;
         setText(bestScoreEl, String(highScore));
         saveHighScore(highScore);
 
-        if (!recordWasAlreadyBeaten && highScore > 1) {
+        if (activeGame === "ball" && !recordWasAlreadyBeaten && highScore > 1) {
           addScorePopup(width * 0.5, height * 0.38, "NOWY REKORD!", `${score} PKT`, true);
           vibrate([35, 40, 35]);
         }
@@ -1972,6 +2284,7 @@
 
       function drawGame(now) {
         ctx.clearRect(0, 0, width, height);
+        if (activeGame === "tower") { drawTower(); return; }
         drawArena();
 
         if (!reducedMotionQuery.matches && trailCount > 0) {
@@ -2103,6 +2416,7 @@
 
       function stepGame(dt) {
         gameTime += dt * 1000;
+        if (activeGame === "tower") { stepTower(dt); return; }
         const now = gameTime;
         if (hitStopDuration > 0) {
           hitStopDuration -= dt;
