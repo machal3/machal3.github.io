@@ -381,6 +381,19 @@
       overflow: hidden;
     }
 
+    .arena-status {
+      position: absolute;
+      z-index: 3;
+      top: 10px;
+      left: 12px;
+      right: 12px;
+      text-align: center;
+      pointer-events: none;
+      color: var(--text-muted);
+      font: 500 12px/1.5 var(--font-sans);
+      letter-spacing: 0.04em;
+    }
+
     .game-background-time {
       position: fixed;
       z-index: 0;
@@ -468,6 +481,14 @@
       pointer-events: none;
       transform: translateX(-50%);
       transition: opacity 0.4s ease;
+    }
+
+    .game-hints {
+      width: calc(100% - 2rem);
+      max-width: 620px;
+      white-space: normal;
+      line-height: 1.45;
+      bottom: max(0.5rem, env(safe-area-inset-bottom));
     }
 
     .game-hints.is-hidden {
@@ -646,6 +667,7 @@
     </div>
 
     <div class="canvas-wrap" id="canvas-wrap">
+      <div class="arena-status" id="arena-status" role="status" aria-live="polite"></div>
       <div class="grid game-background-time" id="game-background-time" aria-hidden="true">
         <div class="unit game-background-unit">
           <span class="num game-background-num" id="game-bg-days">00</span>
@@ -862,7 +884,7 @@
 
           if (progress >= 1 || Math.abs(currentTimeOffset) < 20) {
             currentTimeOffset = 0;
-            targetTimeOffset = 0;
+            // A restarted round may already have earned a new reward during the return.
             isRewinding = false;
           }
         } else if (isGameRunning) {
@@ -911,6 +933,7 @@
           timerGrid.hidden = !keepTimerPosition;
           finishedMsg.hidden = keepTimerPosition;
           timerGrid.setAttribute("aria-label", "Odliczanie zakończone");
+          for (const element of Object.values(valueElements)) setText(element, "00");
           setText(gameBackgroundValueElements.days, "00");
           setText(gameBackgroundValueElements.hours, "00");
           setText(gameBackgroundValueElements.minutes, "00");
@@ -1019,8 +1042,24 @@
       let hintHideTimeoutId = null;
       let gameState = "ready";
       let score = 0;
+      let nextBonusScore = 7;
+      const arenaStatus = document.getElementById("arena-status");
+      const PHYSICS_STEP = 1 / 120;
+      let accumulator = 0;
+      let gameTime = 0;
+      let roundAge = 0;
+      let paddleHits = 0;
+      let wave = 0;
+      let difficulty = 0;
+      let difficultyTarget = 0;
+      let nextWaveAt = 8;
+      let windStrength = 0;
+      let windStartAt = null;
+      const blocks = [];
       let highScore = readHighScore();
       let isNewRecordAchieved = false;
+      let shieldCharges = 0;
+      let previousBonusType = null;
       let width = 0;
       let height = 0;
       let dpr = 1;
@@ -1086,12 +1125,20 @@
 
       const bonusOrb = {
         active: false,
+        type: "wide",
         x: 0,
         y: 0,
         baseY: 0,
         radius: 10,
         pulse: 0,
         floatOffset: 0
+      };
+
+      const BONUS_TYPES = ["wide", "slow", "shield"];
+      const BONUS_LABELS = {
+        wide: "+3 SZERZEJ",
+        slow: "+3 WOLNIEJ",
+        shield: "+3 TARCZA"
       };
 
       function resetEffects() {
@@ -1125,10 +1172,11 @@
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
         const isMobile = width < 680;
-        paddle.baseWidth = isMobile ? Math.max(90, width * 0.28) : Math.max(120, width * 0.17);
-        paddle.width = performance.now() < paddle.bonusUntil ? paddle.baseWidth * 1.38 : paddle.baseWidth;
+        // Comparable coverage and travel time in portrait, landscape and split view.
+        paddle.baseWidth = Math.min(width * 0.42, Math.max(76, width * 0.25));
+        paddle.width = paddle.baseWidth * (1 - difficulty*0.20) * (gameTime < paddle.bonusUntil ? 1.38 : 1);
         paddle.height = isMobile ? 6 : 5;
-        paddle.y = isMobile ? height - 70 : height - 55;
+        paddle.y = height - clamp(height * 0.11, 56, 76);
         paddle.targetX = clamp(normalizedPaddleCenter * width - paddle.width / 2, 0, width - paddle.width);
         paddle.x = paddle.targetX;
         ball.radius = clamp(width * 0.014, 5.5, 8);
@@ -1138,9 +1186,9 @@
           ball.y = clamp(normalizedBallY * height, ball.radius, Math.max(ball.radius, paddle.y - ball.radius));
 
           const velocityScale = height / oldHeight;
-          ball.vx = oldBallVx * velocityScale;
+          ball.vx = oldBallVx * width / oldWidth;
           ball.vy = oldBallVy * velocityScale;
-          ball.speed = Math.hypot(ball.vx, ball.vy);
+          ball.speed *= velocityScale;
           ball.launchStartSpeed *= velocityScale;
           ball.launchTargetSpeed *= velocityScale;
 
@@ -1150,6 +1198,8 @@
             bonusOrb.y = bonusOrb.baseY;
           }
         }
+        for (const block of blocks) layoutBlock(block);
+        accumulator = 0;
       }
 
       function initBall() {
@@ -1168,18 +1218,56 @@
 
         const horizontalDirection = Math.random() > 0.5 ? 1 : -1;
         const horizontalShare = 0.32 + Math.random() * 0.2;
-        ball.vx = ball.speed * horizontalShare * horizontalDirection;
+        ball.vx = ball.speed * width / height * horizontalShare * horizontalDirection;
         ball.vy = ball.speed * Math.sqrt(1 - horizontalShare * horizontalShare);
       }
 
       function spawnBonusOrb() {
+        const availableTypes = BONUS_TYPES.filter((type) => type !== previousBonusType);
+        bonusOrb.type = availableTypes[Math.floor(Math.random() * availableTypes.length)];
+        previousBonusType = bonusOrb.type;
         bonusOrb.active = true;
         bonusOrb.x = Math.random() * Math.max(1, width - 80) + 40;
-        bonusOrb.baseY = Math.random() * Math.max(1, height * 0.35) + 60;
+        bonusOrb.baseY = paddle.y * (0.40 + Math.random() * 0.12);
         bonusOrb.y = bonusOrb.baseY;
         bonusOrb.radius = Math.max(8, Math.min(13, width * 0.02));
         bonusOrb.pulse = 0;
         bonusOrb.floatOffset = Math.random() * Math.PI * 2;
+      }
+
+      function applyBonusEffect(now) {
+        if (bonusOrb.type === "wide") {
+          paddle.bonusUntil = now + 7500;
+          return;
+        }
+
+        if (bonusOrb.type === "slow") {
+          const currentSpeed = Math.max(1, Math.hypot(ball.vx * height / width, ball.vy));
+          const slowedSpeed = Math.min(currentSpeed, Math.max(height * 0.34, currentSpeed * 0.72));
+          const speedScale = slowedSpeed / currentSpeed;
+          ball.vx *= speedScale;
+          ball.vy *= speedScale;
+          ball.speed = slowedSpeed;
+          return;
+        }
+
+        shieldCharges = 1;
+      }
+
+      function useShield() {
+        shieldCharges = 0;
+        ball.x = clamp(ball.x, ball.radius, width - ball.radius);
+        ball.y = Math.max(ball.radius * 3, paddle.y - Math.max(70, height * 0.14));
+        ball.vx *= 0.88;
+        ball.vy = -Math.max(height * 0.38, Math.abs(ball.vy) * 0.82);
+        ball.speed = Math.hypot(ball.vx * height / width, ball.vy);
+
+        trailHead = 0;
+        trailCount = 0;
+        trailSampleAccumulator = 0;
+        createSparks(ball.x, paddle.y, 16, true);
+        addScorePopup(ball.x, paddle.y - 28, "RATUNEK!", "TARCZA ZUŻYTA", true);
+        vibrate([25, 25, 35]);
       }
 
       function createSparks(x, y, count = 8, isCentral = false) {
@@ -1238,7 +1326,20 @@
 
         gameState = "playing";
         score = 0;
+        nextBonusScore = 7;
+        roundAge = 0;
+        paddleHits = 0;
+        wave = 0;
+        difficulty = 0;
+        difficultyTarget = 0;
+        nextWaveAt = 8;
+        windStrength = 0;
+        windStartAt = null;
+        blocks.length = 0;
+        accumulator = 0;
+        setText(arenaStatus, "Spokojny start · bloki pojawią się po kilku odbiciach");
         isNewRecordAchieved = false;
+        shieldCharges = 0;
         targetTimeOffset = 0;
         currentTimeOffset = preservedOffset;
         isRewinding = preserveTimeReturn && Math.abs(preservedOffset) >= 20;
@@ -1338,6 +1439,12 @@
         if (gameState === "over") return;
 
         gameState = "over";
+        blocks.length = 0;
+        windStrength = 0;
+        bonusOrb.active = false;
+        shieldCharges = 0;
+        for (const popup of popups) popup.active = false;
+        setText(arenaStatus, "");
         gameHints.classList.remove("is-hidden");
         setText(gameHints, "Dotknij planszy lub naciśnij Enter, aby zagrać ponownie");
         window.clearTimeout(hintHideTimeoutId);
@@ -1439,10 +1546,11 @@
         const randomVariation = reducedMotionQuery.matches ? 0 : (Math.random() - 0.5) * 0.12;
         const bounceAngle = clamp(hitPoint * maxAngle + spinEffect + randomVariation, -maxAngle, maxAngle);
 
-        const maxSpeed = height * 1.15;
-        const speedIncrease = isSweetSpot ? height * 0.03 : height * 0.018;
-        ball.speed = Math.min(maxSpeed, ball.speed + speedIncrease);
-        ball.vx = Math.sin(bounceAngle) * ball.speed;
+        paddleHits += 1;
+        const maxSpeed = height * (0.90 + difficulty * 0.10);
+        const speedIncrease = height * 0.009;
+        ball.speed = Math.min(maxSpeed, Math.max(height * (0.66 + difficulty * 0.16), ball.speed + speedIncrease));
+        ball.vx = Math.sin(bounceAngle) * ball.speed * width / height;
         ball.vy = -Math.cos(bounceAngle) * ball.speed;
 
         const timeRewardMinutes = isSweetSpot
@@ -1467,18 +1575,212 @@
 
         updateHighScore();
 
-        if (score % 7 === 0 && !bonusOrb.active) spawnBonusOrb();
+        if (score >= nextBonusScore && !bonusOrb.active) {
+          spawnBonusOrb();
+          nextBonusScore = score + 7;
+        }
         paddle.bonusUntil = Math.max(paddle.bonusUntil, now);
       }
 
+      function layoutBlock(block) {
+        block.w = width * block.widthRatio;
+        block.h = Math.min(paddle.y * 0.065, Math.max(8, height * block.heightRatio));
+        const motion = block.moving && !reducedMotionQuery.matches;
+        const t = roundAge * block.rate + block.phase;
+        // Bounded multi-frequency motion: irregular, but continuous and predictable up close.
+        const shift = motion ? width * block.amplitude * (0.72 * Math.sin(t) + 0.28 * Math.sin(t * 1.71 + block.phase)) : 0;
+        block.x = width * block.anchor + shift - block.w / 2;
+        block.y = Math.max(42, paddle.y * block.row) + (motion ? paddle.y * block.verticalAmplitude * Math.sin(t * 0.73) : 0);
+      }
+
+      const BLOCK_SHAPES = {
+        bar: { outline: [[0,0],[1,0],[1,1],[0,1]], parts: [[0,0,1,1]] },
+        step: { outline: [[0,0],[0.55,0],[0.55,0.45],[1,0.45],[1,1],[0,1]], parts: [[0,0,0.55,1],[0.55,0.45,0.45,0.55]] },
+        notch: { outline: [[0,0],[1,0],[1,1],[0.67,1],[0.67,0.5],[0.33,0.5],[0.33,1],[0,1]], parts: [[0,0,1,0.5],[0,0.5,0.33,0.5],[0.67,0.5,0.33,0.5]] }
+      };
+
+      function spawnWave() {
+        wave += 1;
+        const ramp = 1 - Math.exp(-(wave - 1) / 10);
+        const remaining = Math.max(1, targetDate - Date.now());
+        const timePressure = clamp(targetTimeOffset / remaining, 0, 1);
+        difficultyTarget = Math.max(difficultyTarget, ramp, timePressure * 0.96);
+        // Six separated cells leave a permanent open approach in the bottom half.
+        const cells = height < 300 ? [3,4,5] : [0,1,2,3,4,5];
+        for (let i = cells.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [cells[i], cells[j]] = [cells[j], cells[i]];
+        }
+        const count = height < 300 ? 3 : 3 + Math.min(3, Math.floor(difficultyTarget * 4));
+        for (let i = 0; i < count; i++) {
+          const cell = cells[i], column = cell % 3, row = Math.floor(cell / 3);
+          const shape = wave === 1 ? "bar" : ["bar","step","notch"][Math.floor(Math.random()*3)];
+          const block = {
+            anchor: 0.18 + column * 0.32 + (Math.random()-0.5)*0.035,
+            row: (row === 0 ? 0.16 : 0.37) + (Math.random()-0.5)*0.025,
+            widthRatio: 0.10 + Math.random()*0.065,
+            heightRatio: shape === "bar" ? 0.018 + Math.random()*0.025 : 0.052,
+            moving: wave >= 2 && (i === 0 || Math.random() < 0.35 + difficultyTarget * 0.6),
+            amplitude: 0.014 + difficultyTarget * 0.033,
+            verticalAmplitude: row === 1 ? 0.008 + difficultyTarget * 0.017 : 0,
+            rate: 0.45 + difficultyTarget * 0.75 + Math.random()*0.15,
+            phase: Math.random()*Math.PI*2, shape,
+            delay: i * (0.12 + difficultyTarget * 0.17),
+            age: 0, armed: false, active: true
+          };
+          layoutBlock(block);
+          block.prevX=block.x; block.prevY=block.y;
+          blocks.push(block);
+        }
+      }
+
+      function updateArena(dt) {
+        // A few small targets, always well above the final approach to the paddle.
+        if (blocks.length === 0 && paddleHits >= 4 && roundAge >= nextWaveAt && height >= 190) {
+          spawnWave();
+        }
+        if (wave > 0 && Date.now() + currentTimeOffset >= targetDate) difficultyTarget = Math.max(difficultyTarget, 0.96);
+        difficulty += (difficultyTarget - difficulty) * (1 - Math.exp(-0.45 * dt));
+        for (const block of blocks) {
+          block.prevX = block.x;
+          block.prevY = block.y;
+          block.age += dt;
+          layoutBlock(block);
+          // Outline first; never materialize an obstacle on top of the ball.
+          const clear = ball.x + ball.radius + 12 < block.x || ball.x - ball.radius - 12 > block.x + block.w
+            || ball.y + ball.radius + 12 < block.y || ball.y - ball.radius - 12 > block.y + block.h;
+          if (!block.armed && block.age >= block.delay + 1.4 && clear) block.armed = true;
+          if (block.age >= 24) block.active = false;
+        }
+        if (blocks.length && blocks.every(block => !block.active)) {
+          blocks.length = 0;
+          nextWaveAt = roundAge + 7 - difficulty * 3;
+        }
+
+        // 1.5 s warning, 4.5 s smooth breeze, then 16 s calm. No wind near the paddle.
+        if (windStartAt === null && roundAge >= 26 && paddleHits >= 8) windStartAt = roundAge;
+        const windAge = windStartAt === null ? -1 : roundAge - windStartAt;
+        const cycle = windAge >= 0 ? windAge % 22 : -1;
+        const direction = Math.floor(Math.max(0, windAge) / 22) % 2 === 0 ? 1 : -1;
+        const windy = paddleHits >= 8 && height >= 190;
+        const windDuration = 4.5 + difficulty * 4;
+        windStrength = windy && cycle >= 1.5 && cycle < 1.5 + windDuration
+          ? direction * (1 + difficulty * 2.2) * Math.sin((cycle - 1.5) / windDuration * Math.PI) : 0;
+        const arrow = direction > 0 ? "→" : "←";
+        const windLabel = difficulty < 0.3 ? "Lekki wiatr" : difficulty < 0.7 ? "Wiatr" : "Silny wiatr";
+        const text = windy && cycle >= 0 && cycle < 1.5 ? `Za chwilę wiatr ${arrow}`
+          : Math.abs(windStrength) > 0.02 ? `${windLabel} ${arrow} · przy paletce cisza`
+          : blocks.some(block => block.active && !block.armed) ? "Nadchodzą bloki · +1 punkt za trafienie"
+          : blocks.some(block => block.active) ? "Rozbijaj bloki: +1 punkt"
+          : paddleHits < 4 ? "Spokojny start · bloki po 4 odbiciach" : "Chwila spokoju";
+        const endless = Date.now() + currentTimeOffset >= targetDate ? " · dogrywka" : "";
+        setText(arenaStatus, `Fala ${wave}${endless} · ${text}`);
+      }
+
+      function sweptRect(x, y, dx, dy, left, top, right, bottom) {
+        let enter = 0, leave = 1, nx = 0, ny = 0;
+        for (const [p, delta, min, max, ax, ay] of [
+          [x, dx, left, right, 1, 0], [y, dy, top, bottom, 0, 1]
+        ]) {
+          if (Math.abs(delta) < 1e-10) {
+            if (p < min || p > max) return null;
+            continue;
+          }
+          const a = (min - p) / delta, b = (max - p) / delta;
+          const near = Math.min(a, b), far = Math.max(a, b);
+          if (near >= enter) {
+            enter = near;
+            nx = delta > 0 ? -ax : ax;
+            ny = delta > 0 ? -ay : ay;
+          }
+          leave = Math.min(leave, far);
+          if (enter > leave) return null;
+        }
+        return enter >= 0 && enter <= 1 && (nx || ny) ? { t: enter, nx, ny } : null;
+      }
+
+      function collideBlocks(previousX, previousY) {
+        let first = null;
+        for (const block of blocks) {
+          if (!block.active || !block.armed) continue;
+          const shape = BLOCK_SHAPES[block.shape || "bar"];
+          for (const [px,py,pw,ph] of shape.parts) {
+            const oldY = block.prevY ?? block.y;
+            const hit = sweptRect(previousX, previousY,
+              ball.x - previousX - (block.x - block.prevX), ball.y - previousY - (block.y - oldY),
+              block.prevX + px * block.w - ball.radius, oldY + py * block.h - ball.radius,
+              block.prevX + (px+pw) * block.w + ball.radius, oldY + (py+ph) * block.h + ball.radius);
+            if (hit && (!first || hit.t < first.hit.t)) first = { block, hit };
+          }
+        }
+        if (!first) return;
+        const { block, hit } = first;
+        block.active = false;
+        ball.x = previousX + (ball.x - previousX) * hit.t + hit.nx * 0.5;
+        ball.y = previousY + (ball.y - previousY) * hit.t + hit.ny * 0.5;
+        if (hit.nx) ball.vx = hit.nx * Math.abs(ball.vx);
+        if (hit.ny) ball.vy = hit.ny * Math.abs(ball.vy);
+        // Blocks do not accelerate the ball; downward returns allow ample reaction time.
+        if (ball.vy > 0) ball.vy = Math.min(ball.vy, height * (0.58 + difficulty * 0.12));
+        score += 1;
+        setText(currentScoreEl, String(score));
+        updateHighScore();
+        createSparks(block.x + block.w / 2, block.y + block.h / 2, 8);
+        addScorePopup(block.x + block.w / 2, block.y, "+1", "BLOK");
+      }
+
+      function drawArena() {
+        ctx.save();
+        for (const block of blocks) {
+          if (!block.active || block.age < block.delay) continue;
+          ctx.globalAlpha = clamp((block.age-block.delay) / 1.4, 0.12, 0.8) * clamp((24 - block.age) / 1.2, 0, 1);
+          ctx.strokeStyle = "#787570";
+          ctx.fillStyle = "rgba(223,220,213,0.35)";
+          ctx.lineWidth = 1;
+          ctx.setLineDash(block.armed ? [] : [3, 4]);
+          const outline = BLOCK_SHAPES[block.shape || "bar"].outline;
+          ctx.beginPath();
+          outline.forEach(([x,y],i) => {
+            if (i===0) ctx.moveTo(block.x+x*block.w,block.y+y*block.h);
+            else ctx.lineTo(block.x+x*block.w,block.y+y*block.h);
+          });
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+          if (block.moving) {
+            ctx.setLineDash([]);
+            ctx.beginPath();
+            ctx.moveTo(block.x + block.w * 0.4, block.y + block.h / 2);
+            ctx.lineTo(block.x + block.w * 0.6, block.y + block.h / 2);
+            ctx.stroke();
+          }
+        }
+        ctx.setLineDash([]);
+        if (Math.abs(windStrength) > 0.02) {
+          ctx.strokeStyle = "#787570";
+          ctx.globalAlpha = Math.min(0.30, Math.abs(windStrength) * 0.16);
+          for (let i = 0; i < 7; i += 1) {
+            const phase = reducedMotionQuery.matches ? i / 7 : (i / 7 + roundAge * 0.10 * Math.sign(windStrength) + 100) % 1;
+            const x = phase * width, y = paddle.y * (0.15 + (i % 4) * 0.12);
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            ctx.lineTo(x + Math.sign(windStrength) * width * 0.045, y);
+            ctx.stroke();
+          }
+        }
+        ctx.restore();
+      }
+
       function updatePlayingState(dt, now) {
+        roundAge += dt;
+        updateArena(dt);
         if (ball.launching) {
           ball.launchElapsed = Math.min(ball.launchDuration, ball.launchElapsed + dt);
           const progress = ball.launchElapsed / ball.launchDuration;
           const easedProgress = progress * progress * (3 - 2 * progress);
           const desiredSpeed = ball.launchStartSpeed
             + (ball.launchTargetSpeed - ball.launchStartSpeed) * easedProgress;
-          const currentVelocity = Math.hypot(ball.vx, ball.vy);
+          const currentVelocity = Math.hypot(ball.vx * height / width, ball.vy);
 
           if (currentVelocity > 0) {
             const velocityScale = desiredSpeed / currentVelocity;
@@ -1502,7 +1804,11 @@
         const previousBallX = ball.x;
         const previousBallY = ball.y;
 
-        ball.vy += height * 0.38 * dt;
+        ball.vy += height * 0.30 * dt;
+        const windAltitude = clamp((paddle.y * 0.70 - ball.y) / (paddle.y * 0.25), 0, 1);
+        ball.vx += windStrength * width * 0.09 * windAltitude * dt;
+        ball.vx = clamp(ball.vx, -width * (0.72 + difficulty*0.16), width * (0.72 + difficulty*0.16));
+        ball.vy = clamp(ball.vy, -height * (0.90 + difficulty*0.10), height * (0.80 + difficulty*0.12));
         ball.x += ball.vx * dt;
         ball.y += ball.vy * dt;
 
@@ -1521,6 +1827,8 @@
           ball.vy = Math.abs(ball.vy);
           createSparks(ball.x, ball.y, 3);
         }
+
+        collideBlocks(previousBallX, previousBallY);
 
         const previousBottom = previousBallY + ball.radius;
         const currentBottom = ball.y + ball.radius;
@@ -1543,22 +1851,37 @@
           const dy = ball.y - bonusOrb.y;
           const radiusSum = ball.radius + bonusOrb.radius;
 
-          if (dx * dx + dy * dy < radiusSum * radiusSum) {
+          const segmentX = ball.x - previousBallX;
+          const segmentY = ball.y - previousBallY;
+          const segmentLengthSq = segmentX * segmentX + segmentY * segmentY;
+          const contactT = segmentLengthSq > 0 ? clamp(((bonusOrb.x - previousBallX) * segmentX + (bonusOrb.y - previousBallY) * segmentY) / segmentLengthSq, 0, 1) : 1;
+          const nearX = previousBallX + segmentX * contactT - bonusOrb.x;
+          const nearY = previousBallY + segmentY * contactT - bonusOrb.y;
+          if (nearX * nearX + nearY * nearY < radiusSum * radiusSum) {
             score += 3;
             setText(currentScoreEl, String(score));
-            paddle.bonusUntil = now + 7500;
+            applyBonusEffect(now);
             targetTimeOffset += TIME_REWARDS_MINUTES.bonusOrb * 60000;
             updateWarpSummary();
             updateHighScore();
 
-            addScorePopup(bonusOrb.x, bonusOrb.y, "+3 BONUS", `−${TIME_REWARDS_MINUTES.bonusOrb} MINUT`, true);
+            addScorePopup(
+              bonusOrb.x,
+              bonusOrb.y,
+              BONUS_LABELS[bonusOrb.type],
+              `−${TIME_REWARDS_MINUTES.bonusOrb} MINUT`,
+              true
+            );
             createSparks(bonusOrb.x, bonusOrb.y, 14, true);
             bonusOrb.active = false;
             vibrate([20, 30, 20]);
           }
         }
 
-        if (ball.y - ball.radius > height) endGame();
+        if (ball.y - ball.radius > height) {
+          if (shieldCharges > 0) useShield();
+          else endGame();
+        }
       }
 
       function updateEffects(dt) {
@@ -1582,6 +1905,7 @@
 
       function drawGame(now) {
         ctx.clearRect(0, 0, width, height);
+        drawArena();
 
         if (!reducedMotionQuery.matches && trailCount > 0) {
           ctx.fillStyle = "#141414";
@@ -1611,10 +1935,37 @@
           ctx.arc(bonusOrb.x, bonusOrb.y, currentRadius, 0, Math.PI * 2);
           ctx.stroke();
 
-          ctx.fillStyle = "#141414";
-          ctx.beginPath();
-          ctx.arc(bonusOrb.x, bonusOrb.y, 2.5, 0, Math.PI * 2);
-          ctx.fill();
+          ctx.save();
+          ctx.translate(bonusOrb.x, bonusOrb.y);
+          ctx.strokeStyle = "#141414";
+          ctx.lineWidth = 1.4;
+
+          if (bonusOrb.type === "wide") {
+            ctx.beginPath();
+            ctx.moveTo(-4.5, 0);
+            ctx.lineTo(4.5, 0);
+            ctx.moveTo(-4.5, 0);
+            ctx.lineTo(-2.5, -2);
+            ctx.moveTo(-4.5, 0);
+            ctx.lineTo(-2.5, 2);
+            ctx.moveTo(4.5, 0);
+            ctx.lineTo(2.5, -2);
+            ctx.moveTo(4.5, 0);
+            ctx.lineTo(2.5, 2);
+            ctx.stroke();
+          } else if (bonusOrb.type === "slow") {
+            ctx.beginPath();
+            ctx.moveTo(-2.5, -4);
+            ctx.lineTo(-2.5, 4);
+            ctx.moveTo(2.5, -4);
+            ctx.lineTo(2.5, 4);
+            ctx.stroke();
+          } else {
+            ctx.rotate(Math.PI / 4);
+            ctx.strokeRect(-3.5, -3.5, 7, 7);
+          }
+
+          ctx.restore();
         }
 
         const paddleX = Math.round(paddle.x);
@@ -1626,13 +1977,23 @@
         ctx.fillRect(paddleX, paddleY, paddleWidth, paddleHeight);
 
         ctx.fillStyle = "rgba(247, 246, 242, 0.62)";
-        const sweetSpotWidth = Math.round(paddleWidth * 0.22);
+        const sweetSpotWidth = Math.round(paddleWidth * 0.18);
         ctx.fillRect(paddleX + Math.round((paddleWidth - sweetSpotWidth) / 2), paddleY, sweetSpotWidth, paddleHeight);
 
         if (now < paddle.bonusUntil) {
           const remaining = clamp((paddle.bonusUntil - now) / 7500, 0, 1);
           ctx.fillStyle = "#787570";
           ctx.fillRect(paddleX, paddleY + paddleHeight + 4, Math.round(paddleWidth * remaining), 1.5);
+        }
+
+        if (shieldCharges > 0) {
+          ctx.save();
+          ctx.translate(paddleX + paddleWidth / 2, paddleY + paddleHeight + 12);
+          ctx.rotate(Math.PI / 4);
+          ctx.strokeStyle = "#141414";
+          ctx.lineWidth = 1.2;
+          ctx.strokeRect(-3.5, -3.5, 7, 7);
+          ctx.restore();
         }
 
         ctx.beginPath();
@@ -1673,18 +2034,11 @@
         }
       }
 
-      function gameLoop(now) {
-        if (!isGameRunning) return;
-
-        const rawDt = (now - lastFrameTime) / 1000;
-        const dt = Math.min(0.05, Math.max(0.001, rawDt));
-        lastFrameTime = now;
-        updateCountdown(dt);
-
+      function stepGame(dt) {
+        gameTime += dt * 1000;
+        const now = gameTime;
         if (hitStopDuration > 0) {
           hitStopDuration -= dt;
-          drawGame(now);
-          animationId = requestAnimationFrame(gameLoop);
           return;
         }
 
@@ -1698,17 +2052,36 @@
         paddle.x += (paddle.targetX - paddle.x) * lerpFactor;
         paddle.vx = (paddle.x - previousPaddleX) / dt;
 
-        const nextPaddleWidth = now < paddle.bonusUntil ? paddle.baseWidth * 1.38 : paddle.baseWidth;
-        if (nextPaddleWidth !== paddle.width) {
+        const nextPaddleWidth = paddle.baseWidth * (1 - difficulty*0.20) * (now < paddle.bonusUntil ? 1.38 : 1);
+        if (Math.abs(nextPaddleWidth - paddle.width) > 0.001) {
           const center = paddle.x + paddle.width / 2;
+          const targetCenter = paddle.targetX + paddle.width / 2;
           paddle.width = nextPaddleWidth;
           paddle.x = clamp(center - paddle.width / 2, 0, width - paddle.width);
-          paddle.targetX = clamp(paddle.targetX, 0, width - paddle.width);
+          paddle.targetX = clamp(targetCenter - paddle.width / 2, 0, width - paddle.width);
         }
 
         if (gameState === "playing") updatePlayingState(dt, now);
         updateEffects(dt);
-        drawGame(now);
+      }
+
+      function gameLoop(now) {
+        if (!isGameRunning) return;
+        if (document.hidden) {
+          lastFrameTime = now;
+          accumulator = 0;
+          animationId = requestAnimationFrame(gameLoop);
+          return;
+        }
+        const dt = clamp((now - lastFrameTime) / 1000, 0, 0.1);
+        lastFrameTime = now;
+        updateCountdown(dt);
+        accumulator += dt;
+        while (accumulator + 1e-9 >= PHYSICS_STEP) {
+          stepGame(PHYSICS_STEP);
+          accumulator = Math.max(0, accumulator - PHYSICS_STEP);
+        }
+        drawGame(gameTime);
         animationId = requestAnimationFrame(gameLoop);
       }
 
@@ -1742,6 +2115,7 @@
       document.addEventListener("visibilitychange", () => {
         if (document.hidden || !isGameRunning) return;
         lastFrameTime = performance.now();
+        accumulator = 0;
       });
     });
   </script>
